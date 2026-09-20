@@ -34,20 +34,26 @@ export const KoshaDetailModal: React.FC<KoshaDetailModalProps> = ({
   onBookNow,
   onInquire,
 }) => {
-  if (!kosha) return null;
-
   const [activeImageIndex, setActiveImageIndex] = useState<number>(0);
   const [activeTab, setActiveTab] = useState<'details' | 'customize'>('customize');
 
   // Customization state
-  const [flowerColor, setFlowerColor] = useState<string>(kosha.flowerColorOptions[0] || 'أبيض ثلجي وأوف وايت');
-  const [seatingStyle, setSeatingStyle] = useState<string>(kosha.seatingOptions[0] || 'كنب ملكي متصل');
-  const [lightingMode, setLightingMode] = useState<string>(kosha.lightingModes[0] || 'إضاءة دافئة');
+  const [flowerColor, setFlowerColor] = useState<string>(
+    kosha?.flowerColorOptions[0] || 'أبيض ثلجي وأوف وايت'
+  );
+  const [seatingStyle, setSeatingStyle] = useState<string>(
+    kosha?.seatingOptions[0] || 'كنب ملكي متصل'
+  );
+  const [lightingMode, setLightingMode] = useState<string>(
+    kosha?.lightingModes[0] || 'إضاءة دافئة'
+  );
   const [acrylicSignEnabled, setAcrylicSignEnabled] = useState<boolean>(true);
   const [groomName, setGroomName] = useState<string>('م. عبد الرحمن');
   const [brideName, setBrideName] = useState<string>('سارة');
   const [carpetStyle, setCarpetStyle] = useState<string>('سجاد ملكي عاجي');
   const [selectedAddonIds, setSelectedAddonIds] = useState<string[]>(['addon_incense']);
+
+  if (!kosha) return null;
 
   // Calculate total additions price
   const addonsTotal = selectedAddonIds.reduce((sum, addonId) => {
@@ -77,33 +83,33 @@ export const KoshaDetailModal: React.FC<KoshaDetailModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 md:p-6">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/70 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 md:p-6">
       <div 
-        className="relative bg-[#FAF8F5] rounded-3xl border border-[#D4AF37]/40 shadow-2xl max-w-5xl w-full overflow-hidden flex flex-col max-h-[92vh] animate-in fade-in zoom-in-95 duration-200"
+        className="relative bg-[#FAF8F5] rounded-t-3xl sm:rounded-3xl border border-[#D4AF37]/40 shadow-2xl max-w-5xl w-full overflow-hidden flex flex-col max-h-[94vh] sm:max-h-[92vh] animate-in fade-in zoom-in-95 duration-200"
         id="kosha-detail-modal"
       >
         {/* Top Modal Header */}
-        <div className="bg-white px-5 py-4 border-b border-[#E6DEC8] flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="p-2 rounded-xl bg-[#FAF0DF] text-[#801B2E] border border-[#D4AF37]/30">
-              <Crown className="w-5 h-5" />
+        <div className="bg-white px-4 sm:px-5 py-3 sm:py-4 border-b border-[#E6DEC8] flex items-center justify-between">
+          <div className="flex items-center gap-2.5 sm:gap-3 overflow-hidden">
+            <span className="p-1.5 sm:p-2 rounded-xl bg-[#FAF0DF] text-[#801B2E] border border-[#D4AF37]/30 shrink-0">
+              <Crown className="w-4 h-4 sm:w-5 sm:h-5" />
             </span>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-xl font-bold font-title text-[#29170E]">{kosha.name}</h2>
-                <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#801B2E] text-[#F9E8B2] font-semibold">
+            <div className="overflow-hidden">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <h2 className="text-base sm:text-xl font-bold font-title text-[#29170E] truncate">{kosha.name}</h2>
+                <span className="text-[10px] sm:text-xs px-2 py-0.5 rounded-full bg-[#801B2E] text-[#F9E8B2] font-semibold shrink-0">
                   {kosha.categoryLabel}
                 </span>
               </div>
               {kosha.himyariteTag && (
-                <p className="text-xs text-[#8C6D1F] font-serif mt-0.5">{kosha.himyariteTag}</p>
+                <p className="text-[11px] sm:text-xs text-[#8C6D1F] font-serif mt-0.5 truncate">{kosha.himyariteTag}</p>
               )}
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="p-2 rounded-full text-[#7A6A5A] hover:bg-[#F2EDE4] hover:text-[#29170E] transition-colors"
+            className="p-1.5 sm:p-2 rounded-full text-[#7A6A5A] hover:bg-[#F2EDE4] hover:text-[#29170E] transition-colors shrink-0"
           >
             <X className="w-5 h-5" />
           </button>

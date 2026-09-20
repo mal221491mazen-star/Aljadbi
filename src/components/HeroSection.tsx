@@ -37,7 +37,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSearch, onExploreCli
       <div className="absolute inset-0 pointer-events-none opacity-20">
         <svg className="w-full h-full" viewBox="0 0 1440 600" fill="none">
           <path
-            d="M720 40 C520 40 400 160 300 280 C200 400 0 450 0 600 L1440 600 C1440 450 1240 400 1140 280 C1040 160 920 40' 720 40 Z"
+            d="M720 40 C520 40 400 160 300 280 C200 400 0 450 0 600 L1440 600 C1440 450 1240 400 1140 280 C1040 160 920 40 720 40 Z"
             fill="url(#qamariya-grad)"
           />
           <defs>
@@ -52,11 +52,13 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSearch, onExploreCli
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Top Heritage Badge */}
         <div className="flex justify-center mb-5">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#FAF0E1] border border-[#D4AF37]/50 text-[#73531F] text-xs font-semibold shadow-xs">
-            <span className="text-[#C5A059] font-serif">𐩱𐩡𐩴𐩲𐩵𐩨𐩺</span>
-            <span className="w-1.5 h-1.5 rounded-full bg-[#801B2E]"></span>
-            <span>كوش وأفراح الجعدبي • فخامة الصالات بروح سبئية ملكية</span>
-            <Sparkles className="w-3.5 h-3.5 text-[#C5A059]" />
+          <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 rounded-full bg-[#FAF0E1] border border-[#D4AF37]/50 text-[#73531F] text-[11px] sm:text-xs font-semibold shadow-xs max-w-full">
+            <span className="text-[#C5A059] font-serif shrink-0">𐩱𐩡𐩴𐩲𐩵𐩨𐩺</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-[#801B2E] shrink-0"></span>
+            <span className="truncate">
+              <span className="hidden xs:inline">كوش وأفراح الجعدبي • </span>فخامة الصالات بروح سبئية ملكية
+            </span>
+            <Sparkles className="w-3.5 h-3.5 text-[#C5A059] shrink-0" />
           </div>
         </div>
 
@@ -149,7 +151,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSearch, onExploreCli
         </div>
 
         {/* Value Propositions / Key Guarantees */}
-        <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-5xl mx-auto">
+        <div className="mt-8 sm:mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 max-w-5xl mx-auto">
           <div className="bg-white/70 backdrop-blur-xs p-4 rounded-xl border border-[#E8DEC8] flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-[#FAF0DF] text-[#801B2E] flex items-center justify-center shrink-0 border border-[#D4AF37]/30">
               <Layers className="w-5 h-5" />

@@ -56,3 +56,20 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #B38E22;
 }
+
+/* Print Optimization for Official Booking Voucher */
+@media print {
+  body {
+    background: #FFFFFF !important;
+    color: #111827 !important;
+  }
+  
+  /* Hide all non-printable application elements */
+  header, footer, nav, #mobile-bottom-nav, button:not(.printable-element) {
+    display: none !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+}

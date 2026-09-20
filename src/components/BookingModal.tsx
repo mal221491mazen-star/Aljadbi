@@ -19,6 +19,7 @@ import {
 import { Kosha, CustomizationSelections, BookingRequest, PaymentMethod, EventTimeSlot } from '../types';
 import { AVAILABLE_ADDONS, YEMENI_HALLS } from '../data/initialData';
 import { formatPriceYER, formatPriceUSD, getTimeSlotLabel, getPaymentMethodLabel } from '../utils/formatters';
+import { printBookingVoucher } from '../utils/voucherPrinter';
 
 interface BookingModalProps {
   kosha: Kosha | null;
@@ -35,11 +36,11 @@ export const BookingModal: React.FC<BookingModalProps> = ({
   onConfirmBooking,
   onOpenChatWithBooking,
 }) => {
-  if (!kosha) return null;
-
   const [step, setStep] = useState<'form' | 'success'>('form');
   const [createdBooking, setCreatedBooking] = useState<BookingRequest | null>(null);
   const [copiedCode, setCopiedCode] = useState<boolean>(false);
+  const [isPrinting, setIsPrinting] = useState<boolean>(false);
+  const [printSuccessNotice, setPrintSuccessNotice] = useState<boolean>(false);
 
   // Form Fields
   const [customerName, setCustomerName] = useState('');
@@ -54,6 +55,8 @@ export const BookingModal: React.FC<BookingModalProps> = ({
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('kuraimi');
   const [notes, setNotes] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+
+  if (!kosha) return null;
 
   // Calculate pricing
   const defaultCustomization: CustomizationSelections = customization || {
@@ -141,23 +144,36 @@ export const BookingModal: React.FC<BookingModalProps> = ({
     setTimeout(() => setCopiedCode(false), 2000);
   };
 
+  const handlePrintVoucher = () => {
+    if (!createdBooking) return;
+    setIsPrinting(true);
+    setPrintSuccessNotice(true);
+    printBookingVoucher(createdBooking);
+    setTimeout(() => {
+      setIsPrinting(false);
+    }, 2000);
+    setTimeout(() => {
+      setPrintSuccessNotice(false);
+    }, 7000);
+  };
+
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 md:p-6">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/75 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 md:p-6">
       <div 
-        className="relative bg-[#FAF8F5] rounded-3xl border border-[#D4AF37]/50 shadow-2xl max-w-2xl w-full overflow-hidden flex flex-col max-h-[92vh] animate-in fade-in zoom-in-95 duration-200"
+        className="relative bg-[#FAF8F5] rounded-t-3xl sm:rounded-3xl border border-[#D4AF37]/50 shadow-2xl max-w-2xl w-full overflow-hidden flex flex-col max-h-[94vh] sm:max-h-[92vh] animate-in fade-in zoom-in-95 duration-200"
         id="booking-modal-container"
       >
         {/* Modal Top Header */}
-        <div className="bg-[#801B2E] text-[#F9E8B2] px-5 py-4 flex items-center justify-between">
+        <div className="bg-[#801B2E] text-[#F9E8B2] px-4 sm:px-5 py-3.5 sm:py-4 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <span className="p-1.5 rounded-lg bg-white/10 border border-[#D4AF37]/40">
-              <CalendarCheck className="w-5 h-5" />
+              <CalendarCheck className="w-4 h-4 sm:w-5 sm:h-5" />
             </span>
             <div>
-              <h2 className="text-base sm:text-lg font-bold font-title">
+              <h2 className="text-sm sm:text-lg font-bold font-title">
                 {step === 'form' ? 'طلب حجز كوشة الصالة' : 'تم استلام طلب الحجز بنجاح!'}
               </h2>
-              <span className="text-[11px] text-[#F3E5AB]">كوش وأفراح الجعدبي • خدمة رقمية معتمدة</span>
+              <span className="text-[10px] sm:text-[11px] text-[#F3E5AB]">كوش وأفراح الجعدبي • خدمة رقمية معتمدة</span>
             </div>
           </div>
 
@@ -403,17 +419,17 @@ export const BookingModal: React.FC<BookingModalProps> = ({
             </div>
 
             {/* Pricing Breakdown Bottom Banner */}
-            <div className="bg-[#F6EFE3] p-4 rounded-2xl border border-[#D4AF37]/50 flex items-center justify-between">
-              <div>
+            <div className="bg-[#F6EFE3] p-4 rounded-2xl border border-[#D4AF37]/50 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="w-full sm:w-auto text-right">
                 <span className="text-xs text-[#7A6A5A] block">إجمالي تكلفة الإيجار والتركيب:</span>
-                <span className="text-xl font-bold font-title text-[#801B2E]">
+                <span className="text-lg sm:text-xl font-bold font-title text-[#801B2E]">
                   {formatPriceYER(grandTotalYER)}
                 </span>
               </div>
 
               <button
                 type="submit"
-                className="px-6 py-2.5 rounded-xl text-sm font-bold bg-[#801B2E] text-white hover:bg-[#681424] shadow-md transition-all flex items-center gap-2"
+                className="w-full sm:w-auto px-6 py-3 min-h-[44px] rounded-xl text-sm font-bold bg-[#801B2E] text-white hover:bg-[#681424] shadow-md transition-all flex items-center justify-center gap-2"
               >
                 <CalendarCheck className="w-4 h-4 text-[#F9E8B2]" />
                 <span>إرسال وتثبيت طلب الحجز</span>
@@ -437,27 +453,45 @@ export const BookingModal: React.FC<BookingModalProps> = ({
               </p>
             </div>
 
-            {/* Official Booking Voucher */}
-            <div className="bg-white p-5 rounded-2xl border-2 border-[#D4AF37]/60 shadow-lg relative">
+            {/* Official Booking Voucher Card */}
+            <div 
+              id="official-booking-voucher"
+              className="bg-white p-5 sm:p-6 rounded-2xl border-2 border-[#D4AF37] shadow-xl relative overflow-hidden"
+            >
+              {/* Decorative Corner Accents */}
+              <div className="absolute top-2 right-2 w-4 h-4 border-t-2 border-r-2 border-[#801B2E]"></div>
+              <div className="absolute top-2 left-2 w-4 h-4 border-t-2 border-l-2 border-[#801B2E]"></div>
+              <div className="absolute bottom-2 right-2 w-4 h-4 border-b-2 border-r-2 border-[#801B2E]"></div>
+              <div className="absolute bottom-2 left-2 w-4 h-4 border-b-2 border-l-2 border-[#801B2E]"></div>
+
               {/* Top Voucher Barcode / Watermark */}
-              <div className="flex items-center justify-between border-b border-[#E8DEC8] pb-3 mb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b-2 border-[#D4AF37]/40 pb-3 mb-4 gap-2">
                 <div>
-                  <span className="text-[10px] text-[#8C6D1F] font-serif block">𐩱𐩡𐩴𐩲𐩵𐩨𐩺 • قسيمة حجز رسمية</span>
-                  <span className="text-xs font-bold text-[#29170E]">كوش وأفراح الجعدبي</span>
+                  <div className="flex items-center gap-1.5 text-[11px] text-[#8C6D1F] font-serif">
+                    <span>𐩱𐩡𐩴𐩲𐩵𐩨𐩺</span>
+                    <span>•</span>
+                    <span className="font-sans font-bold">سند حجز وتأكيد معتمد</span>
+                  </div>
+                  <h4 className="text-base sm:text-lg font-bold font-title text-[#801B2E]">
+                    كوش وأفراح الجعدبي
+                  </h4>
+                  <span className="text-[10px] text-[#7A6A5A]">خدمة تأجير كوش الصالات النسائية والرجالية • صنعاء</span>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <div className="bg-[#FAF8F5] px-3 py-1.5 rounded-lg border border-[#DDD3BF] flex items-center gap-2">
-                    <span className="text-xs text-[#7A6A5A]">رقم الحجز:</span>
-                    <strong className="text-sm font-bold text-[#801B2E] tracking-wider" dir="ltr">
-                      {createdBooking.bookingCode}
-                    </strong>
+                <div className="flex items-center gap-2 self-start sm:self-auto">
+                  <div className="bg-[#FAF8F5] px-3 py-1.5 rounded-xl border border-[#D4AF37]/50 flex items-center gap-2 shadow-2xs">
+                    <div className="flex flex-col text-right">
+                      <span className="text-[10px] text-[#7A6A5A]">رقم السند:</span>
+                      <strong className="text-sm sm:text-base font-bold text-[#801B2E] tracking-wider font-mono" dir="ltr">
+                        {createdBooking.bookingCode}
+                      </strong>
+                    </div>
                     <button
                       onClick={() => handleCopyCode(createdBooking.bookingCode)}
-                      className="text-[#7A6A5A] hover:text-[#29170E] p-0.5"
+                      className="text-[#7A6A5A] hover:text-[#801B2E] p-1.5 rounded-lg hover:bg-white transition-colors"
                       title="نسخ رقم الحجز"
                     >
-                      {copiedCode ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                      {copiedCode ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
                     </button>
                   </div>
                 </div>
@@ -465,71 +499,112 @@ export const BookingModal: React.FC<BookingModalProps> = ({
 
               {/* Voucher Fields Grid */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
-                <div>
-                  <span className="text-[#7A6A5A] block text-[11px]">اسم العريس / صاحب الحجز:</span>
-                  <strong className="text-[#29170E]">{createdBooking.customerName}</strong>
+                <div className="bg-[#FAF8F5] p-2.5 rounded-xl border border-[#EDE4D2]">
+                  <span className="text-[#7A6A5A] block text-[10.5px]">المستأجر / العريس:</span>
+                  <strong className="text-[#29170E] text-xs sm:text-sm">{createdBooking.customerName}</strong>
                 </div>
 
-                <div>
-                  <span className="text-[#7A6A5A] block text-[11px]">رقم الهاتف:</span>
-                  <strong className="text-[#29170E]" dir="ltr">{createdBooking.customerPhone}</strong>
+                <div className="bg-[#FAF8F5] p-2.5 rounded-xl border border-[#EDE4D2]">
+                  <span className="text-[#7A6A5A] block text-[10.5px]">رقم هاتف التنسيق:</span>
+                  <strong className="text-[#29170E] text-xs sm:text-sm font-mono" dir="ltr">{createdBooking.customerPhone}</strong>
                 </div>
 
-                <div>
-                  <span className="text-[#7A6A5A] block text-[11px]">تاريخ المناسبة:</span>
-                  <strong className="text-[#801B2E]">{createdBooking.eventDate}</strong>
+                <div className="bg-[#FAF8F5] p-2.5 rounded-xl border border-[#EDE4D2]">
+                  <span className="text-[#7A6A5A] block text-[10.5px]">تاريخ الحفل:</span>
+                  <strong className="text-[#801B2E] text-xs sm:text-sm">{createdBooking.eventDate}</strong>
                 </div>
 
-                <div>
-                  <span className="text-[#7A6A5A] block text-[11px]">اسم الكوشة:</span>
-                  <strong className="text-[#29170E]">{createdBooking.koshaName}</strong>
+                <div className="bg-[#FAF8F5] p-2.5 rounded-xl border border-[#EDE4D2]">
+                  <span className="text-[#7A6A5A] block text-[10.5px]">اسم الكوشة المختارة:</span>
+                  <strong className="text-[#29170E] text-xs sm:text-sm">{createdBooking.koshaName}</strong>
                 </div>
 
-                <div>
-                  <span className="text-[#7A6A5A] block text-[11px]">صالة الأعراس:</span>
-                  <strong className="text-[#29170E]">{createdBooking.hallName}</strong>
+                <div className="bg-[#FAF8F5] p-2.5 rounded-xl border border-[#EDE4D2]">
+                  <span className="text-[#7A6A5A] block text-[10.5px]">صالة الأعراس:</span>
+                  <strong className="text-[#29170E] text-xs sm:text-sm">{createdBooking.hallName}</strong>
                 </div>
 
-                <div>
-                  <span className="text-[#7A6A5A] block text-[11px]">فترة الحفل:</span>
-                  <strong className="text-[#29170E]">{getTimeSlotLabel(createdBooking.timeSlot)}</strong>
+                <div className="bg-[#FAF8F5] p-2.5 rounded-xl border border-[#EDE4D2]">
+                  <span className="text-[#7A6A5A] block text-[10.5px]">فترة الحفل بالصالة:</span>
+                  <strong className="text-[#29170E] text-xs sm:text-sm">{getTimeSlotLabel(createdBooking.timeSlot)}</strong>
                 </div>
               </div>
 
+              {/* Kosha Customization Summary */}
+              {createdBooking.customization && (
+                <div className="mt-3 bg-[#FAF5EB] p-3 rounded-xl border border-[#E8DEC8] text-[11px] text-[#5C4533] space-y-1">
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 font-medium">
+                    <span>لون الورد: <strong>{createdBooking.customization.flowerColor}</strong></span>
+                    <span>طراز الجلسة: <strong>{createdBooking.customization.seatingStyle}</strong></span>
+                    <span>الإضاءة: <strong>{createdBooking.customization.lightingMode}</strong></span>
+                  </div>
+                  {createdBooking.customization.customAcrylicNames.enabled && (
+                    <div className="text-[#801B2E] font-bold">
+                      لوحة الأسماء الإكريليكية: {createdBooking.customization.customAcrylicNames.groomName} & {createdBooking.customization.customAcrylicNames.brideName}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Total & Deposit banner */}
-              <div className="mt-4 pt-3 border-t border-[#E8DEC8] flex items-center justify-between bg-[#FAF8F5] p-3 rounded-xl">
+              <div className="mt-4 pt-3 border-t border-[#E8DEC8] grid grid-cols-2 sm:grid-cols-3 gap-2 bg-[#FDF9F0] p-3.5 rounded-xl border border-[#E8DEC8]">
                 <div>
-                  <span className="text-[11px] text-[#7A6A5A] block">الإجمالي المتفق عليه:</span>
-                  <span className="text-base font-bold text-[#801B2E]">
+                  <span className="text-[10.5px] text-[#7A6A5A] block">إجمالي تكلفة الحجز:</span>
+                  <span className="text-sm sm:text-base font-bold text-[#801B2E]">
                     {formatPriceYER(createdBooking.totalPriceYER)}
                   </span>
                 </div>
 
-                <div className="text-left">
-                  <span className="text-[11px] text-[#7A6A5A] block">عربون التثبيت:</span>
-                  <span className="text-sm font-bold text-[#4B3B2F]">
+                <div>
+                  <span className="text-[10.5px] text-[#065F46] block">عربون التثبيت:</span>
+                  <span className="text-sm sm:text-base font-bold text-[#065F46]">
                     {formatPriceYER(createdBooking.depositAmountYER)}
                   </span>
                 </div>
+
+                <div className="col-span-2 sm:col-span-1">
+                  <span className="text-[10.5px] text-[#991B1B] block">المتبقي عند التركيب:</span>
+                  <span className="text-sm sm:text-base font-bold text-[#991B1B]">
+                    {formatPriceYER(Math.max(0, createdBooking.totalPriceYER - createdBooking.depositAmountYER))}
+                  </span>
+                </div>
+              </div>
+
+              {/* Official Seal and stamp placeholder in UI */}
+              <div className="mt-3 flex items-center justify-between text-[11px] text-[#7A6A5A] pt-2 border-t border-dashed border-[#E0D4C0]">
+                <span>حالة الطلب: <strong className="text-amber-700">قيد المراجعة وتأكيد العربون</strong></span>
+                <span className="font-serif text-[#C5A059]">ختم إدارة كوش الجعدبي المعتمد ✦</span>
               </div>
             </div>
 
+            {/* Printing Notification Toast */}
+            {printSuccessNotice && (
+              <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs flex items-center gap-2 animate-in fade-in">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>تم إنشاء سند الحجز بنجاح وإرساله للطباعة / الحفظ بصيغة PDF!</span>
+              </div>
+            )}
+
             {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-1">
               <button
-                onClick={() => window.print()}
-                className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-xs font-bold bg-[#FAF8F5] text-[#4B3B2F] hover:bg-[#F0E9DC] border border-[#DDD3BF] flex items-center justify-center gap-1.5 shadow-2xs"
+                id="print-booking-voucher-btn"
+                type="button"
+                onClick={handlePrintVoucher}
+                disabled={isPrinting}
+                className="w-full sm:w-auto px-5 py-3 rounded-xl text-xs sm:text-sm font-bold bg-[#FAF8F5] text-[#801B2E] hover:bg-[#F3EAD8] active:scale-98 border-2 border-[#D4AF37] flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer min-h-[44px]"
               >
-                <Printer className="w-4 h-4" />
-                <span>طباعة / حفظ سند الحجز</span>
+                <Printer className="w-4 h-4 text-[#801B2E]" />
+                <span>{isPrinting ? 'جاري تجهيز وطباعة السند...' : 'طباعة / حفظ سند الحجز'}</span>
               </button>
 
               <button
+                type="button"
                 onClick={() => {
                   onClose();
                   onOpenChatWithBooking(createdBooking.bookingCode, createdBooking.koshaName);
                 }}
-                className="w-full sm:w-auto px-6 py-2.5 rounded-xl text-xs font-bold bg-[#801B2E] text-white hover:bg-[#681424] flex items-center justify-center gap-1.5 shadow-md"
+                className="w-full sm:w-auto px-6 py-3 rounded-xl text-xs sm:text-sm font-bold bg-gradient-to-r from-[#801B2E] to-[#A3233B] text-white hover:brightness-105 active:scale-98 flex items-center justify-center gap-2 shadow-md transition-all min-h-[44px]"
               >
                 <MessageSquare className="w-4 h-4 text-[#F9E8B2]" />
                 <span>تأكيد الحجز عبر المحادثة المباشرة مع الجعدبي</span>

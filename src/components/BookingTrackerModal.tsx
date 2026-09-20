@@ -9,10 +9,12 @@ import {
   Sparkles, 
   MessageSquare,
   AlertCircle,
-  FileText
+  FileText,
+  Printer
 } from 'lucide-react';
 import { BookingRequest } from '../types';
 import { formatPriceYER, formatStatusLabel, getTimeSlotLabel } from '../utils/formatters';
+import { printBookingVoucher } from '../utils/voucherPrinter';
 
 interface BookingTrackerModalProps {
   isOpen: boolean;
@@ -27,13 +29,13 @@ export const BookingTrackerModal: React.FC<BookingTrackerModalProps> = ({
   bookings,
   onOpenChatWithBooking,
 }) => {
-  if (!isOpen) return null;
-
   const [searchCode, setSearchCode] = useState('');
   const [searchedBooking, setSearchedBooking] = useState<BookingRequest | null>(
     bookings.length > 0 ? bookings[0] : null
   );
   const [errorNotFound, setErrorNotFound] = useState(false);
+
+  if (!isOpen) return null;
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,13 +82,13 @@ export const BookingTrackerModal: React.FC<BookingTrackerModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 md:p-6">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/75 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 md:p-6">
       <div 
-        className="relative bg-[#FAF8F5] rounded-3xl border border-[#D4AF37]/50 shadow-2xl max-w-xl w-full overflow-hidden flex flex-col max-h-[92vh] animate-in fade-in zoom-in-95 duration-200"
+        className="relative bg-[#FAF8F5] rounded-t-3xl sm:rounded-3xl border border-[#D4AF37]/50 shadow-2xl max-w-xl w-full overflow-hidden flex flex-col max-h-[94vh] sm:max-h-[92vh] animate-in fade-in zoom-in-95 duration-200"
         id="booking-tracker-modal"
       >
         {/* Header */}
-        <div className="bg-[#801B2E] text-[#F9E8B2] px-5 py-4 flex items-center justify-between">
+        <div className="bg-[#801B2E] text-[#F9E8B2] px-4 sm:px-5 py-3.5 sm:py-4 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <span className="p-1.5 rounded-lg bg-white/10 border border-[#D4AF37]/40">
               <Search className="w-5 h-5" />
@@ -243,6 +245,17 @@ export const BookingTrackerModal: React.FC<BookingTrackerModalProps> = ({
                     <span className="text-[#7A6A5A] block text-[11px]">إجمالي التكلفة:</span>
                     <strong className="text-[#801B2E]">{formatPriceYER(searchedBooking.totalPriceYER)}</strong>
                   </div>
+                </div>
+
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={() => printBookingVoucher(searchedBooking)}
+                    className="w-full py-2.5 px-3 rounded-xl bg-[#FAF8F5] text-[#801B2E] hover:bg-[#F3EAD8] border border-[#D4AF37]/60 text-xs font-bold flex items-center justify-center gap-1.5 transition-all"
+                  >
+                    <Printer className="w-4 h-4" />
+                    <span>طباعة / حفظ سند هذا الحجز (PDF)</span>
+                  </button>
                 </div>
               </div>
 

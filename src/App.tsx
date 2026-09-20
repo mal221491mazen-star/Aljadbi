@@ -25,6 +25,7 @@ import { BookingTrackerModal } from './components/BookingTrackerModal';
 import { AdminDashboard } from './components/AdminDashboard';
 import { HallsSection } from './components/HallsSection';
 import { Footer } from './components/Footer';
+import { MobileBottomNav } from './components/MobileBottomNav';
 import { 
   Star, 
   Sparkles, 
@@ -39,31 +40,55 @@ import {
 export default function App() {
   // PERSISTENT DATA STATES
   const [koshas, setKoshas] = useState<Kosha[]>(() => {
-    const saved = localStorage.getItem('jaadabi_koshas');
-    return saved ? JSON.parse(saved) : INITIAL_KOSHAS;
+    try {
+      const saved = localStorage.getItem('jaadabi_koshas');
+      return saved ? JSON.parse(saved) : INITIAL_KOSHAS;
+    } catch {
+      return INITIAL_KOSHAS;
+    }
   });
 
   const [bookings, setBookings] = useState<BookingRequest[]>(() => {
-    const saved = localStorage.getItem('jaadabi_bookings');
-    return saved ? JSON.parse(saved) : INITIAL_BOOKINGS;
+    try {
+      const saved = localStorage.getItem('jaadabi_bookings');
+      return saved ? JSON.parse(saved) : INITIAL_BOOKINGS;
+    } catch {
+      return INITIAL_BOOKINGS;
+    }
   });
 
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>(() => {
-    const saved = localStorage.getItem('jaadabi_chat_messages');
-    return saved ? JSON.parse(saved) : INITIAL_CHAT_MESSAGES;
+    try {
+      const saved = localStorage.getItem('jaadabi_chat_messages');
+      return saved ? JSON.parse(saved) : INITIAL_CHAT_MESSAGES;
+    } catch {
+      return INITIAL_CHAT_MESSAGES;
+    }
   });
 
   // Save to localStorage whenever state changes
   useEffect(() => {
-    localStorage.setItem('jaadabi_koshas', JSON.stringify(koshas));
+    try {
+      localStorage.setItem('jaadabi_koshas', JSON.stringify(koshas));
+    } catch (e) {
+      console.warn('LocalStorage save failed:', e);
+    }
   }, [koshas]);
 
   useEffect(() => {
-    localStorage.setItem('jaadabi_bookings', JSON.stringify(bookings));
+    try {
+      localStorage.setItem('jaadabi_bookings', JSON.stringify(bookings));
+    } catch (e) {
+      console.warn('LocalStorage save failed:', e);
+    }
   }, [bookings]);
 
   useEffect(() => {
-    localStorage.setItem('jaadabi_chat_messages', JSON.stringify(chatMessages));
+    try {
+      localStorage.setItem('jaadabi_chat_messages', JSON.stringify(chatMessages));
+    } catch (e) {
+      console.warn('LocalStorage save failed:', e);
+    }
   }, [chatMessages]);
 
   // NAVIGATION & VIEW STATES
@@ -236,7 +261,7 @@ export default function App() {
   const pendingBookingsCount = bookings.filter((b) => b.status === 'pending').length;
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#FAF8F5] text-[#1E2022] font-cairo">
+    <div className="min-h-screen flex flex-col bg-[#FAF8F5] text-[#1E2022] font-cairo pb-16 lg:pb-0">
       {/* Toast Notification Banner */}
       {toastMessage && (
         <div className="fixed bottom-5 left-5 z-50 bg-[#1C2331] text-[#F9E8B2] px-4 py-3 rounded-2xl border border-[#D4AF37] shadow-xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-5">
@@ -487,6 +512,20 @@ export default function App() {
           const el = document.getElementById('catalog-section');
           el?.scrollIntoView({ behavior: 'smooth' });
         }}
+      />
+
+      {/* Dedicated Mobile Bottom Navigation Bar */}
+      <MobileBottomNav
+        activeView={activeView}
+        onViewChange={setActiveView}
+        onOpenChat={() => setIsChatOpen(true)}
+        onOpenTracker={() => setIsTrackerOpen(true)}
+        onScrollToCatalog={() => {
+          const el = document.getElementById('catalog-section');
+          el?.scrollIntoView({ behavior: 'smooth' });
+        }}
+        unreadChatCount={0}
+        pendingBookingsCount={pendingBookingsCount}
       />
     </div>
   );

@@ -68,11 +68,11 @@ export const Navbar: React.FC<NavbarProps> = ({
       </div>
 
       {/* Main Navigation Bar */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16 sm:h-20 gap-2">
           {/* Brand Logo */}
           <div 
-            className="cursor-pointer"
+            className="cursor-pointer shrink-0"
             onClick={() => {
               onViewChange('client');
               onSelectCategory('all');
@@ -132,12 +132,12 @@ export const Navbar: React.FC<NavbarProps> = ({
           </nav>
 
           {/* Action Buttons & Portal Switcher */}
-          <div className="flex items-center gap-2 sm:gap-3">
-            {/* Track Booking Button */}
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+            {/* Track Booking Button (Desktop/Tablet) */}
             <button
               id="track-booking-btn"
               onClick={onOpenTracker}
-              className="hidden sm:flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-lg text-[#523A25] bg-[#EFE9DC] hover:bg-[#E5DDCC] border border-[#DDD3BF] transition-all"
+              className="hidden sm:flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl text-[#523A25] bg-[#EFE9DC] hover:bg-[#E5DDCC] border border-[#DDD3BF] transition-all min-h-[44px]"
               title="متابعة حالة حجزك برقم الحجز"
             >
               <Search className="w-3.5 h-3.5 text-[#801B2E]" />
@@ -148,11 +148,11 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               id="open-chat-btn"
               onClick={onOpenChat}
-              className="relative flex items-center gap-1.5 px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg text-white bg-gradient-to-r from-[#801B2E] to-[#A3233B] hover:brightness-105 shadow-sm transition-all"
+              className="relative flex items-center gap-1.5 px-2.5 sm:px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl text-white bg-gradient-to-r from-[#801B2E] to-[#A3233B] hover:brightness-105 shadow-sm transition-all min-h-[44px]"
             >
               <MessageSquare className="w-4 h-4" />
               <span className="hidden md:inline">محادثة المؤجر</span>
-              <span className="md:hidden">محادثة</span>
+              <span className="hidden xs:inline md:hidden">محادثة</span>
               {unreadChatCount > 0 && (
                 <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-emerald-500 text-white rounded-full text-[10px] flex items-center justify-center font-bold animate-bounce shadow-xs">
                   {unreadChatCount}
@@ -164,7 +164,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               id="admin-toggle-btn"
               onClick={() => onViewChange(activeView === 'admin' ? 'client' : 'admin')}
-              className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg transition-all border ${
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-2 text-xs font-semibold rounded-xl transition-all border min-h-[44px] ${
                 activeView === 'admin'
                   ? 'bg-[#1C2331] text-[#E5C158] border-[#E5C158]/50 shadow-md'
                   : 'bg-white text-[#523A25] border-[#D4AF37]/50 hover:bg-[#FAF5EC]'
@@ -174,13 +174,13 @@ export const Navbar: React.FC<NavbarProps> = ({
               {activeView === 'admin' ? (
                 <>
                   <Store className="w-4 h-4 text-[#E5C158]" />
-                  <span>لوحة الإدارة نشطة</span>
+                  <span className="hidden xs:inline">لوحة الإدارة</span>
                 </>
               ) : (
                 <>
                   <ShieldCheck className="w-4 h-4 text-[#801B2E]" />
                   <span className="hidden sm:inline">لوحة الإدارة</span>
-                  <span className="sm:hidden">الإدارة</span>
+                  <span className="hidden xs:inline sm:hidden">الإدارة</span>
                   {pendingBookingsCount > 0 && (
                     <span className="w-4 h-4 rounded-full bg-amber-500 text-white text-[10px] flex items-center justify-center font-bold">
                       {pendingBookingsCount}
@@ -193,7 +193,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* Mobile Menu Toggle */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 rounded-lg text-[#523A25] hover:bg-[#EFE9DC] transition-colors"
+              className="lg:hidden p-2 rounded-xl text-[#523A25] hover:bg-[#EFE9DC] active:bg-[#E2D8C0] transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
               aria-label="القائمة"
             >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}

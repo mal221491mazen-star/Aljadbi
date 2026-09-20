@@ -21,10 +21,17 @@ import {
   ChevronDown,
   Sparkles,
   Layers,
-  Power
+  Power,
+  Printer,
+  ArrowUpDown,
+  Copy,
+  Check,
+  X,
+  ExternalLink
 } from 'lucide-react';
 import { Kosha, BookingRequest, ChatMessage, KoshaCategory, BookingStatus } from '../types';
 import { formatPriceYER, formatPriceUSD, formatStatusLabel, getTimeSlotLabel, getPaymentMethodLabel } from '../utils/formatters';
+import { printBookingVoucher } from '../utils/voucherPrinter';
 
 interface AdminDashboardProps {
   koshas: Kosha[];
@@ -67,6 +74,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   // Quick reply state
   const [replyText, setReplyText] = useState('');
 
+  // Sorting and interaction state for bookings
+  const [bookingSortBy, setBookingSortBy] = useState<'newest' | 'event_date' | 'price_desc' | 'price_asc'>('newest');
+  const [copiedBookingCode, setCopiedBookingCode] = useState<string | null>(null);
+
+  const handleCopyCode = (code: string) => {
+    navigator.clipboard.writeText(code);
+    setCopiedBookingCode(code);
+    setTimeout(() => setCopiedBookingCode(null), 2000);
+  };
+
   // Calculated KPI stats
   const totalRevenue = bookings
     .filter((b) => b.status !== 'cancelled')
@@ -75,6 +92,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const pendingCount = bookings.filter((b) => b.status === 'pending').length;
   const confirmedCount = bookings.filter((b) => b.status === 'confirmed').length;
   const inPrepCount = bookings.filter((b) => b.status === 'in_preparation').length;
+  const completedCount = bookings.filter((b) => b.status === 'completed').length;
 
   // Filtered bookings
   const filteredBookings = bookings.filter((b) => {
@@ -86,6 +104,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       b.customerPhone.includes(searchBookingQuery) ||
       b.hallName.toLowerCase().includes(searchBookingQuery.toLowerCase());
     return matchesStatus && matchesSearch;
+  });
+
+  const sortedBookings = [...filteredBookings].sort((a, b) => {
+    if (bookingSortBy === 'event_date') {
+      return a.eventDate.localeCompare(b.eventDate);
+    }
+    if (bookingSortBy === 'price_desc') {
+      return b.totalPriceYER - a.totalPriceYER;
+    }
+    if (bookingSortBy === 'price_asc') {
+      return a.totalPriceYER - b.totalPriceYER;
+    }
+    return b.id.localeCompare(a.id);
   });
 
   const handleSaveNewKosha = (e: React.FormEvent) => {
@@ -152,41 +183,42 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     <div className="bg-[#FAF8F5] min-h-screen pb-16" id="admin-dashboard-container">
       {/* Top Admin Navigation Header */}
       <div className="bg-[#1C2331] text-white border-b border-[#2E384D] sticky top-0 z-30 shadow-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-[#801B2E] text-[#F9E8B2] flex items-center justify-center font-serif font-bold text-lg border border-[#D4AF37]">
+            <div className="flex items-center gap-2 sm:gap-3 overflow-hidden">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#801B2E] text-[#F9E8B2] flex items-center justify-center font-serif font-bold text-base sm:text-lg border border-[#D4AF37] shrink-0">
                 𐩴𐩵
               </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h1 className="text-base sm:text-lg font-bold font-title text-[#F9E8B2]">
-                    لوحة إدارة كوش وأفراح الجعدبي
+              <div className="overflow-hidden">
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <h1 className="text-xs sm:text-base font-bold font-title text-[#F9E8B2] truncate">
+                    إدارة كوش الجعدبي
                   </h1>
-                  <span className="px-2 py-0.5 rounded-md text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                  <span className="hidden xs:inline-block px-2 py-0.5 rounded-md text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shrink-0">
                     بوابة المؤجر
                   </span>
                 </div>
-                <p className="text-[11px] text-gray-300">التحكم بالطلبات، الكوش، المواعيد، والتواصل مع الزبائن</p>
+                <p className="hidden md:block text-[11px] text-gray-300">التحكم بالطلبات، الكوش، المواعيد، والتواصل مع الزبائن</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
               <button
                 onClick={() => setIsAddModalOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-[#801B2E] text-white hover:bg-[#9E2239] transition-colors shadow-xs"
+                className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold bg-[#801B2E] text-white hover:bg-[#9E2239] transition-colors shadow-xs"
               >
-                <Plus className="w-4 h-4" />
-                <span className="hidden sm:inline">إضافة كوشة جديدة</span>
+                <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">إضافة كوشة</span>
                 <span className="sm:hidden">إضافة</span>
               </button>
 
               <button
                 onClick={onCloseAdmin}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/10 hover:bg-white/20 text-gray-200 transition-colors border border-white/10"
+                className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/10 hover:bg-white/20 text-gray-200 transition-colors border border-white/10"
               >
                 <Power className="w-3.5 h-3.5 text-rose-400" />
-                <span>العودة للمتجر</span>
+                <span className="hidden sm:inline">العودة للمتجر</span>
+                <span className="sm:hidden">خروج</span>
               </button>
             </div>
           </div>
@@ -307,188 +339,412 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
         {/* TAB 1: BOOKINGS MANAGEMENT */}
         {activeTab === 'bookings' && (
-          <div className="space-y-4">
-            {/* Filter and search bar */}
-            <div className="bg-white p-4 rounded-2xl border border-[#E6DEC8] flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
-              <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto no-scrollbar pb-1 sm:pb-0">
-                <button
-                  onClick={() => setBookingFilterStatus('all')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap ${
-                    bookingFilterStatus === 'all'
-                      ? 'bg-[#801B2E] text-white'
-                      : 'bg-[#FAF8F5] text-[#5B4636] hover:bg-[#F2EDE4]'
-                  }`}
-                >
-                  الكل ({bookings.length})
-                </button>
-                <button
-                  onClick={() => setBookingFilterStatus('pending')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap ${
-                    bookingFilterStatus === 'pending'
-                      ? 'bg-amber-600 text-white'
-                      : 'bg-amber-50 text-amber-800 hover:bg-amber-100'
-                  }`}
-                >
-                  قيد المراجعة ({pendingCount})
-                </button>
-                <button
-                  onClick={() => setBookingFilterStatus('confirmed')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap ${
-                    bookingFilterStatus === 'confirmed'
-                      ? 'bg-emerald-600 text-white'
-                      : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
-                  }`}
-                >
-                  مؤكدة ({confirmedCount})
-                </button>
-                <button
-                  onClick={() => setBookingFilterStatus('in_preparation')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap ${
-                    bookingFilterStatus === 'in_preparation'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-blue-50 text-blue-800 hover:bg-blue-100'
-                  }`}
-                >
-                  جاري التجهيز ({inPrepCount})
-                </button>
+          <div className="space-y-4" id="admin-bookings-tab-content">
+            {/* Control & Organization Toolbar */}
+            <div className="bg-white p-4 sm:p-5 rounded-2xl border border-[#E6DEC8] shadow-xs space-y-3.5">
+              {/* Top Row: Status Filters */}
+              <div className="flex items-center justify-between flex-wrap gap-2 pb-3 border-b border-[#F0E9DC]">
+                <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 w-full sm:w-auto">
+                  <button
+                    onClick={() => setBookingFilterStatus('all')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                      bookingFilterStatus === 'all'
+                        ? 'bg-[#801B2E] text-white shadow-xs'
+                        : 'bg-[#FAF8F5] text-[#5B4636] hover:bg-[#F2EDE4] border border-[#E6DEC8]'
+                    }`}
+                  >
+                    <span>الكل</span>
+                    <span className="px-1.5 py-0.2 rounded-md bg-black/10 text-[10px]">
+                      {bookings.length}
+                    </span>
+                  </button>
+
+                  <button
+                    onClick={() => setBookingFilterStatus('pending')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                      bookingFilterStatus === 'pending'
+                        ? 'bg-amber-600 text-white shadow-xs'
+                        : 'bg-amber-50 text-amber-900 hover:bg-amber-100 border border-amber-200'
+                    }`}
+                  >
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>قيد المراجعة</span>
+                    <span className="px-1.5 py-0.2 rounded-md bg-amber-700/20 text-[10px]">
+                      {pendingCount}
+                    </span>
+                  </button>
+
+                  <button
+                    onClick={() => setBookingFilterStatus('confirmed')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                      bookingFilterStatus === 'confirmed'
+                        ? 'bg-emerald-600 text-white shadow-xs'
+                        : 'bg-emerald-50 text-emerald-900 hover:bg-emerald-100 border border-emerald-200'
+                    }`}
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>مؤكدة</span>
+                    <span className="px-1.5 py-0.2 rounded-md bg-emerald-700/20 text-[10px]">
+                      {confirmedCount}
+                    </span>
+                  </button>
+
+                  <button
+                    onClick={() => setBookingFilterStatus('in_preparation')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                      bookingFilterStatus === 'in_preparation'
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : 'bg-blue-50 text-blue-900 hover:bg-blue-100 border border-blue-200'
+                    }`}
+                  >
+                    <Building2 className="w-3.5 h-3.5" />
+                    <span>جاري التجهيز</span>
+                    <span className="px-1.5 py-0.2 rounded-md bg-blue-700/20 text-[10px]">
+                      {inPrepCount}
+                    </span>
+                  </button>
+
+                  <button
+                    onClick={() => setBookingFilterStatus('completed')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                      bookingFilterStatus === 'completed'
+                        ? 'bg-slate-700 text-white shadow-xs'
+                        : 'bg-slate-50 text-slate-800 hover:bg-slate-100 border border-slate-200'
+                    }`}
+                  >
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    <span>مكتملة</span>
+                    <span className="px-1.5 py-0.2 rounded-md bg-slate-700/20 text-[10px]">
+                      {completedCount}
+                    </span>
+                  </button>
+                </div>
+
+                <div className="text-xs text-[#7A6A5A] hidden md:block">
+                  إجمالي المبالغ: <strong className="text-[#801B2E]">{formatPriceYER(sortedBookings.reduce((sum, b) => sum + b.totalPriceYER, 0))}</strong>
+                </div>
               </div>
 
-              <div className="w-full sm:w-72 relative">
-                <input
-                  type="text"
-                  value={searchBookingQuery}
-                  onChange={(e) => setSearchBookingQuery(e.target.value)}
-                  placeholder="بحث برقم الحجز، الاسم، الصالة..."
-                  className="w-full bg-[#FAF8F5] border border-[#DDD3BF] rounded-xl pr-8 pl-3 py-1.5 text-xs text-[#29170E] focus:outline-hidden focus:border-[#801B2E]"
-                />
-                <Search className="w-3.5 h-3.5 text-[#8A7A6A] absolute right-2.5 top-1/2 -translate-y-1/2" />
+              {/* Second Row: Search & Sort Controls */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                {/* Search Input */}
+                <div className="w-full sm:flex-1 relative">
+                  <input
+                    type="text"
+                    value={searchBookingQuery}
+                    onChange={(e) => setSearchBookingQuery(e.target.value)}
+                    placeholder="بحث برقم الحجز، اسم العريس، الصالة، أو رقم الهاتف..."
+                    className="w-full bg-[#FAF8F5] border border-[#DDD3BF] rounded-xl pr-9 pl-8 py-2 text-xs sm:text-sm text-[#29170E] focus:outline-hidden focus:border-[#801B2E] focus:ring-1 focus:ring-[#801B2E]/20 transition-all placeholder:text-[#9A8A7A]"
+                  />
+                  <Search className="w-4 h-4 text-[#8A7A6A] absolute right-3 top-1/2 -translate-y-1/2" />
+                  {searchBookingQuery && (
+                    <button
+                      onClick={() => setSearchBookingQuery('')}
+                      className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#8A7A6A] hover:text-[#29170E] p-1 rounded-full hover:bg-gray-200"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Sort dropdown */}
+                <div className="w-full sm:w-auto flex items-center justify-between sm:justify-start gap-2 bg-[#FAF8F5] p-1 rounded-xl border border-[#DDD3BF]">
+                  <span className="text-[11px] text-[#7A6A5A] flex items-center gap-1 pr-2 font-medium shrink-0">
+                    <ArrowUpDown className="w-3.5 h-3.5 text-[#801B2E]" />
+                    <span>ترتيب بحسب:</span>
+                  </span>
+
+                  <select
+                    value={bookingSortBy}
+                    onChange={(e) => setBookingSortBy(e.target.value as any)}
+                    className="bg-white border border-[#E6DEC8] rounded-lg px-2.5 py-1 text-xs font-semibold text-[#29170E] focus:outline-hidden focus:border-[#801B2E] cursor-pointer"
+                  >
+                    <option value="newest">⏱️ الأحدث تسجيلاً</option>
+                    <option value="event_date">📅 موعد المناسبة الأقرب</option>
+                    <option value="price_desc">💰 الأعلى سعراً</option>
+                    <option value="price_asc">🏷️ الأقل سعراً</option>
+                  </select>
+                </div>
               </div>
             </div>
 
-            {/* Bookings Table / Cards */}
-            <div className="space-y-3">
-              {filteredBookings.length === 0 ? (
-                <div className="bg-white p-8 rounded-2xl border border-[#E6DEC8] text-center">
-                  <Package className="w-10 h-10 text-[#DDD3BF] mx-auto mb-2" />
-                  <p className="text-sm font-bold text-[#5B4636]">لا توجد طلبات حجز تطابق هذا التصنيف حالياً</p>
+            {/* Results Status Sub-bar */}
+            <div className="flex items-center justify-between text-xs px-2 text-[#7A6A5A]">
+              <span>
+                عرض <strong>{sortedBookings.length}</strong> من إجمالي <strong>{bookings.length}</strong> طلبات حجز
+              </span>
+              {bookingFilterStatus !== 'all' && (
+                <button
+                  onClick={() => setBookingFilterStatus('all')}
+                  className="text-[#801B2E] hover:underline font-bold"
+                >
+                  إلغاء التصفية وعرض الكل
+                </button>
+              )}
+            </div>
+
+            {/* Bookings Cards List */}
+            <div className="space-y-4">
+              {sortedBookings.length === 0 ? (
+                <div className="bg-white p-10 rounded-2xl border border-[#E6DEC8] text-center shadow-xs">
+                  <Package className="w-12 h-12 text-[#DDD3BF] mx-auto mb-3" />
+                  <h3 className="text-sm sm:text-base font-bold text-[#5B4636]">
+                    لا توجد طلبات حجز تطابق هذا البحث أو التصنيف
+                  </h3>
+                  <p className="text-xs text-[#8A7A6A] mt-1 max-w-sm mx-auto">
+                    جرب تغيير خيارات التصفية أو مسح عبارة البحث لرؤية كافة الحجوزات المسجلة.
+                  </p>
+                  {(bookingFilterStatus !== 'all' || searchBookingQuery) && (
+                    <button
+                      onClick={() => {
+                        setBookingFilterStatus('all');
+                        setSearchBookingQuery('');
+                      }}
+                      className="mt-3.5 px-4 py-2 rounded-xl text-xs font-bold bg-[#801B2E] text-white hover:bg-[#681424] transition-colors"
+                    >
+                      إعادة ضبط البحث
+                    </button>
+                  )}
                 </div>
               ) : (
-                filteredBookings.map((b) => {
+                sortedBookings.map((b) => {
                   const st = formatStatusLabel(b.status);
+                  const isCopied = copiedBookingCode === b.bookingCode;
+                  const remainingAmount = Math.max(0, b.totalPriceYER - b.depositAmountYER);
+
                   return (
                     <div
                       key={b.id}
-                      className="bg-white rounded-2xl border border-[#E6DEC8] p-4 sm:p-5 shadow-xs hover:border-[#C5A059] transition-all flex flex-col lg:flex-row lg:items-center justify-between gap-4"
+                      className="bg-white rounded-2xl border border-[#E6DEC8] hover:border-[#D4AF37] transition-all shadow-xs overflow-hidden flex flex-col"
                     >
-                      {/* Left info */}
-                      <div className="flex items-start gap-3.5">
-                        <img
-                          src={b.koshaImage}
-                          alt={b.koshaName}
-                          className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-cover border border-[#DDD3BF] shrink-0"
-                        />
-                        <div>
-                          <div className="flex flex-wrap items-center gap-2 mb-1">
-                            <span className="font-bold text-xs text-[#801B2E] bg-[#FAF0F2] px-2 py-0.5 rounded-md border border-[#801B2E]/20" dir="ltr">
+                      {/* 1. Header Strip */}
+                      <div className="bg-[#FAF8F5] px-4 py-3 border-b border-[#F0E9DC] flex flex-wrap items-center justify-between gap-2.5">
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-lg border border-[#DDD3BF] shadow-2xs">
+                            <span className="text-[10.5px] text-[#7A6A5A]">رقم الحجز:</span>
+                            <strong className="text-xs sm:text-sm font-mono font-bold text-[#801B2E] tracking-wider" dir="ltr">
                               {b.bookingCode}
-                            </span>
-                            <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${st.color} ${st.bg} ${st.border}`}>
-                              {st.label}
-                            </span>
-                            <span className="text-[11px] text-[#8A7A6A]">
-                              تاريخ الطلب: {b.createdAt}
-                            </span>
-                          </div>
-
-                          <h3 className="text-sm sm:text-base font-bold text-[#29170E]">{b.koshaName}</h3>
-                          
-                          <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[#5B4636]">
-                            <span className="flex items-center gap-1 font-semibold text-[#801B2E]">
-                              <Building2 className="w-3.5 h-3.5" />
-                              {b.hallName} ({b.customerCity})
-                            </span>
-                            <span className="flex items-center gap-1 font-semibold text-[#29170E]">
-                              <Calendar className="w-3.5 h-3.5 text-[#C5A059]" />
-                              {b.eventDate} ({getTimeSlotLabel(b.timeSlot)})
-                            </span>
-                          </div>
-
-                          <div className="mt-2 text-xs text-[#6B5A4B] flex flex-wrap items-center gap-2">
-                            <span>الزبون: <strong>{b.customerName}</strong></span>
-                            <span>•</span>
-                            <a
-                              href={`tel:${b.customerPhone}`}
-                              className="text-[#801B2E] hover:underline font-bold flex items-center gap-1"
-                              dir="ltr"
+                            </strong>
+                            <button
+                              onClick={() => handleCopyCode(b.bookingCode)}
+                              className="text-[#8A7A6A] hover:text-[#801B2E] p-0.5"
+                              title="نسخ رقم الحجز"
                             >
-                              <Phone className="w-3 h-3" />
-                              {b.customerPhone}
-                            </a>
-                            {b.notes && (
-                              <span className="bg-[#FAF8F5] px-2 py-0.5 rounded-md border border-[#DDD3BF] text-[11px] text-[#7A6A5A]">
-                                ملاحظة: {b.notes}
-                              </span>
-                            )}
+                              {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                            </button>
+                          </div>
+
+                          <span className="text-[11px] text-[#8A7A6A] hidden sm:inline">
+                            تسجيل: {b.createdAt}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <span className={`px-2.5 py-1 rounded-full text-xs font-bold border flex items-center gap-1.5 ${st.color} ${st.bg} ${st.border}`}>
+                            <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
+                            <span>{st.label}</span>
+                          </span>
+
+                          <span className="text-[11px] bg-white px-2 py-0.5 rounded-md border border-[#DDD3BF] text-[#5B4636] font-medium">
+                            {getTimeSlotLabel(b.timeSlot)}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* 2. Structured Middle Body */}
+                      <div className="p-4 sm:p-5 grid grid-cols-1 lg:grid-cols-12 gap-4">
+                        {/* Kosha Image & Basic info (col 1-4) */}
+                        <div className="lg:col-span-4 flex items-start gap-3.5">
+                          <img
+                            src={b.koshaImage}
+                            alt={b.koshaName}
+                            className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl object-cover border border-[#DDD3BF] shrink-0 shadow-2xs"
+                          />
+                          <div className="space-y-1">
+                            <span className="text-[10px] text-[#C5A059] font-serif block">
+                              𐩱𐩡𐩴𐩲𐩵𐩨𐩺 • كوشة معتمدة
+                            </span>
+                            <h3 className="text-sm sm:text-base font-bold font-title text-[#29170E] leading-snug">
+                              {b.koshaName}
+                            </h3>
+                            <div className="text-xs text-[#801B2E] font-medium flex items-center gap-1">
+                              <Building2 className="w-3.5 h-3.5 shrink-0" />
+                              <span>{b.hallName} ({b.customerCity})</span>
+                            </div>
+                            <div className="text-xs text-[#5B4636] flex items-center gap-1 font-semibold">
+                              <Calendar className="w-3.5 h-3.5 text-[#C5A059] shrink-0" />
+                              <span>{b.eventDate}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Customer & Customization Details (col 5-8) */}
+                        <div className="lg:col-span-5 space-y-2 border-t lg:border-t-0 lg:border-r border-[#F0E9DC] pt-3 lg:pt-0 lg:pr-4">
+                          {/* Customer */}
+                          <div className="flex flex-wrap items-center justify-between gap-1 text-xs">
+                            <div>
+                              <span className="text-[#8A7A6A] text-[11px] block">صاحب الحجز:</span>
+                              <strong className="text-[#29170E] text-sm">{b.customerName}</strong>
+                            </div>
+
+                            <div className="flex items-center gap-1.5">
+                              <a
+                                href={`tel:${b.customerPhone}`}
+                                className="px-2 py-1 rounded-lg bg-[#FAF8F5] hover:bg-[#F2EDE4] text-[#801B2E] font-bold text-xs border border-[#DDD3BF] flex items-center gap-1"
+                                dir="ltr"
+                              >
+                                <Phone className="w-3 h-3" />
+                                <span>{b.customerPhone}</span>
+                              </a>
+
+                              <a
+                                href={`https://wa.me/${b.customerWhatsapp ? b.customerWhatsapp.replace(/\+/g, '') : b.customerPhone.replace(/\+/g, '')}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="px-2 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-[11px] border border-emerald-200 flex items-center gap-1"
+                                title="تواصل عبر الواتساب"
+                              >
+                                <span>واتساب</span>
+                                <ExternalLink className="w-3 h-3" />
+                              </a>
+                            </div>
+                          </div>
+
+                          {/* Customizations summary */}
+                          {b.customization && (
+                            <div className="bg-[#FAF5EB] p-2.5 rounded-xl border border-[#E8DEC8] text-[11px] text-[#5C4533] space-y-0.5">
+                              <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 font-medium">
+                                <span>ورد: <strong>{b.customization.flowerColor}</strong></span>
+                                <span>جلسة: <strong>{b.customization.seatingStyle}</strong></span>
+                                <span>إضاءة: <strong>{b.customization.lightingMode}</strong></span>
+                              </div>
+                              {b.customization.customAcrylicNames?.enabled && (
+                                <div className="text-[#801B2E] font-bold truncate">
+                                  أسماء إكريليك: {b.customization.customAcrylicNames.groomName} & {b.customization.customAcrylicNames.brideName}
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Notes if present */}
+                          {b.notes && (
+                            <div className="text-[11px] text-[#6B5A4B] bg-[#FAF8F5] p-2 rounded-lg border border-[#EDE4D2]">
+                              <span className="font-semibold text-[#801B2E]">ملاحظات:</span> {b.notes}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Financial Box (col 9-12) */}
+                        <div className="lg:col-span-3 bg-[#FAF8F5] p-3 rounded-xl border border-[#E8DEC8] flex flex-col justify-between">
+                          <div className="space-y-1.5 text-xs">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[#7A6A5A] text-[11px]">الإجمالي:</span>
+                              <strong className="text-sm font-bold text-[#801B2E]">
+                                {formatPriceYER(b.totalPriceYER)}
+                              </strong>
+                            </div>
+
+                            <div className="flex items-center justify-between text-emerald-800">
+                              <span className="text-[11px]">العربون:</span>
+                              <strong className="font-bold">
+                                {formatPriceYER(b.depositAmountYER)}
+                              </strong>
+                            </div>
+
+                            <div className="flex items-center justify-between text-[#8A7A6A] pt-1 border-t border-[#E8DEC8]">
+                              <span className="text-[11px]">المتبقي عند التركيب:</span>
+                              <strong className="font-bold text-[#29170E]">
+                                {formatPriceYER(remainingAmount)}
+                              </strong>
+                            </div>
+                          </div>
+
+                          <div className="mt-2 pt-2 border-t border-[#E8DEC8] flex items-center justify-between text-[10.5px] text-[#7A6A5A]">
+                            <span>طريقة الدفع:</span>
+                            <span className="font-medium text-[#29170E]">
+                              {getPaymentMethodLabel(b.paymentMethod)}
+                            </span>
                           </div>
                         </div>
                       </div>
 
-                      {/* Right price & status action buttons */}
-                      <div className="flex flex-col sm:flex-row lg:flex-col items-start sm:items-center lg:items-end justify-between gap-3 pt-3 lg:pt-0 border-t lg:border-t-0 border-[#F0E9DC] shrink-0">
-                        <div className="text-right lg:text-left">
-                          <span className="text-[11px] text-[#7A6A5A] block">الإجمالي المتفق عليه:</span>
-                          <span className="text-base sm:text-lg font-bold font-title text-[#801B2E]">
-                            {formatPriceYER(b.totalPriceYER)}
-                          </span>
-                          <span className="text-[11px] text-amber-800 block">
-                            العربون: {formatPriceYER(b.depositAmountYER)} ({getPaymentMethodLabel(b.paymentMethod)})
-                          </span>
-                        </div>
-
-                        {/* Status update buttons */}
-                        <div className="flex items-center gap-1.5 flex-wrap">
+                      {/* 3. Operational Actions Footer */}
+                      <div className="bg-[#FAF8F5]/60 px-4 py-3 border-t border-[#F0E9DC] flex flex-wrap items-center justify-between gap-2.5">
+                        {/* Status progression button */}
+                        <div className="flex items-center gap-2 flex-wrap">
                           {b.status === 'pending' && (
                             <button
                               onClick={() => onUpdateBookingStatus(b.id, 'confirmed')}
-                              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 transition-colors flex items-center gap-1 shadow-2xs"
+                              className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 active:scale-98 transition-all flex items-center gap-1.5 shadow-2xs"
                               title="تأكيد الحجز بعد استلام العربون"
                             >
                               <CheckCircle2 className="w-3.5 h-3.5" />
-                              <span>تأكيد الحجز والعربون</span>
+                              <span>تأكيد الحجز واستلام العربون</span>
                             </button>
                           )}
 
                           {b.status === 'confirmed' && (
                             <button
                               onClick={() => onUpdateBookingStatus(b.id, 'in_preparation')}
-                              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-600 text-white hover:bg-blue-700 transition-colors flex items-center gap-1 shadow-2xs"
+                              className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-blue-600 text-white hover:bg-blue-700 active:scale-98 transition-all flex items-center gap-1.5 shadow-2xs"
                               title="بدء مرحلة التجهيز والقص"
                             >
                               <Building2 className="w-3.5 h-3.5" />
-                              <span>بدء التجهيز للتركيب</span>
+                              <span>بدء التجهيز للتركيب بالصالة</span>
                             </button>
                           )}
 
                           {b.status === 'in_preparation' && (
                             <button
                               onClick={() => onUpdateBookingStatus(b.id, 'completed')}
-                              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-gray-700 text-white hover:bg-gray-800 transition-colors flex items-center gap-1 shadow-2xs"
+                              className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-white hover:bg-black active:scale-98 transition-all flex items-center gap-1.5 shadow-2xs"
                             >
-                              <CheckCircle2 className="w-3.5 h-3.5" />
-                              <span>تم الحفل بنجاح</span>
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                              <span>تأكيد اكتمال الحفل بنجاح</span>
                             </button>
                           )}
+
+                          {b.status === 'completed' && (
+                            <span className="px-3 py-1 rounded-xl text-xs font-bold text-emerald-800 bg-emerald-100 flex items-center gap-1">
+                              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                              <span>تم الحفل بنجاح وأُغلقت الخدمة</span>
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Secondary tools: Print Voucher, Chat, Cancel */}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <button
+                            onClick={() => printBookingVoucher(b)}
+                            className="px-3 py-1.5 rounded-xl text-xs font-bold text-[#801B2E] bg-white hover:bg-[#FAF0E1] border border-[#D4AF37]/70 flex items-center gap-1.5 shadow-2xs transition-all"
+                            title="طباعة أو تصدير سند رسمي لهذا الحجز بصيغة PDF"
+                          >
+                            <Printer className="w-3.5 h-3.5 text-[#801B2E]" />
+                            <span>طباعة سند الحجز</span>
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              setActiveTab('messages');
+                              onOwnerReplyMessage(`بخصوص الحجز رقم ${b.bookingCode} الخاص بكوشة ${b.koshaName}: `, b.bookingCode);
+                            }}
+                            className="px-3 py-1.5 rounded-xl text-xs font-medium text-[#5B4636] bg-white hover:bg-gray-100 border border-[#DDD3BF] flex items-center gap-1.5 shadow-2xs transition-all"
+                            title="فتح محادثة الزبائن بخصوص هذا الحجز"
+                          >
+                            <MessageSquare className="w-3.5 h-3.5" />
+                            <span>محادثة الزبون</span>
+                          </button>
 
                           {b.status !== 'cancelled' && (
                             <button
                               onClick={() => {
-                                if (confirm('هل أنت متأكد من إلغاء هذا الحجز؟')) {
+                                if (confirm(`هل أنت متأكد من إلغاء الحجز رقم ${b.bookingCode}؟`)) {
                                   onUpdateBookingStatus(b.id, 'cancelled');
                                 }
                               }}
-                              className="px-2.5 py-1.5 rounded-lg text-xs font-medium text-rose-700 bg-rose-50 hover:bg-rose-100 transition-colors border border-rose-200"
+                              className="px-2.5 py-1.5 rounded-xl text-xs font-medium text-rose-700 bg-rose-50 hover:bg-rose-100 transition-colors border border-rose-200"
                             >
-                              إلغاء
+                              إلغاء الحجز
                             </button>
                           )}
                         </div>
@@ -703,8 +959,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
       {/* ADD NEW KOSHA MODAL */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/75 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl border border-[#D4AF37]/50 shadow-2xl max-w-xl w-full p-6 space-y-4 animate-in fade-in zoom-in-95">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/75 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-white rounded-t-3xl sm:rounded-3xl border border-[#D4AF37]/50 shadow-2xl max-w-xl w-full p-4 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto animate-in fade-in zoom-in-95">
             <div className="flex items-center justify-between border-b border-[#F0E9DC] pb-3">
               <div className="flex items-center gap-2">
                 <span className="p-1.5 rounded-lg bg-[#FAF0DF] text-[#801B2E]">

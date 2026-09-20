@@ -14,17 +14,17 @@ export const HimyariteLogo: React.FC<HimyariteLogoProps> = ({
   const isDark = variant === 'dark';
 
   return (
-    <div className="flex items-center gap-3 select-none" id="brand-logo-container">
+    <div className="flex items-center gap-2 sm:gap-3 select-none" id="brand-logo-container">
       {/* Symbolic Himyarite Qamariya & Musnad Geometric Monogram */}
       <div
-        className={`relative flex items-center justify-center rounded-xl transition-transform hover:scale-105 ${
+        className={`relative flex items-center justify-center rounded-xl transition-transform hover:scale-105 shrink-0 ${
           size === 'sm'
-            ? 'w-9 h-9'
+            ? 'w-8 h-8 sm:w-9 sm:h-9'
             : size === 'lg'
-            ? 'w-14 h-14'
+            ? 'w-12 h-12 sm:w-14 sm:h-14'
             : size === 'xl'
-            ? 'w-16 h-16'
-            : 'w-11 h-11'
+            ? 'w-14 h-14 sm:w-16 sm:h-16'
+            : 'w-9 h-9 sm:w-11 sm:h-11'
         } ${
           isDark
             ? 'bg-gradient-to-br from-[#2D1B0A] via-[#1E140A] to-[#120B05] border border-[#C5A059]/40 shadow-lg'
@@ -49,12 +49,12 @@ export const HimyariteLogo: React.FC<HimyariteLogoProps> = ({
         <span
           className={`font-serif font-bold tracking-wider leading-none text-center ${
             size === 'sm'
-              ? 'text-base'
+              ? 'text-sm sm:text-base'
               : size === 'lg'
-              ? 'text-2xl'
+              ? 'text-xl sm:text-2xl'
               : size === 'xl'
-              ? 'text-3xl'
-              : 'text-xl'
+              ? 'text-2xl sm:text-3xl'
+              : 'text-base sm:text-xl'
           } ${
             isDark
               ? 'text-[#E5C158] drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]'
@@ -71,17 +71,17 @@ export const HimyariteLogo: React.FC<HimyariteLogoProps> = ({
       </div>
 
       {/* Brand Typographic Title */}
-      <div className="flex flex-col">
-        <div className="flex items-baseline gap-1.5">
+      <div className="flex flex-col min-w-0">
+        <div className="flex items-baseline gap-1 sm:gap-1.5">
           <span
-            className={`font-bold font-title tracking-tight ${
+            className={`font-bold font-title tracking-tight truncate ${
               size === 'sm'
-                ? 'text-xl'
+                ? 'text-lg sm:text-xl'
                 : size === 'lg'
-                ? 'text-3xl'
+                ? 'text-2xl sm:text-3xl'
                 : size === 'xl'
-                ? 'text-4xl'
-                : 'text-2xl'
+                ? 'text-3xl sm:text-4xl'
+                : 'text-xl sm:text-2xl'
             } ${
               isDark
                 ? 'text-white'
@@ -90,13 +90,13 @@ export const HimyariteLogo: React.FC<HimyariteLogoProps> = ({
           >
             الجَعْدَبي
           </span>
-          <span className="text-xs px-1.5 py-0.5 rounded bg-[#C5A059]/15 text-[#8C6D1F] border border-[#C5A059]/30 font-medium">
+          <span className="text-[10px] sm:text-xs px-1.5 py-0.5 rounded bg-[#C5A059]/15 text-[#8C6D1F] border border-[#C5A059]/30 font-medium whitespace-nowrap shrink-0">
             لكوش الأعراس
           </span>
         </div>
 
         {showTagline && (
-          <div className="flex items-center gap-1.5 text-[11px] text-[#7A6B5D]">
+          <div className="hidden sm:flex items-center gap-1.5 text-[11px] text-[#7A6B5D] whitespace-nowrap">
             <span className="text-[#C5A059]">✦</span>
             <span>فخامة ملكية • طابع يمني أصيل</span>
             <span className="text-[#C5A059]">✦</span>

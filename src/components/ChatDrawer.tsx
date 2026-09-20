@@ -34,8 +34,6 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({
   onClearAttachment,
   senderRole = 'customer',
 }) => {
-  if (!isOpen) return null;
-
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -45,8 +43,12 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({
   };
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages, isTyping]);
+    if (isOpen) {
+      scrollToBottom();
+    }
+  }, [messages, isTyping, isOpen]);
+
+  if (!isOpen) return null;
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
