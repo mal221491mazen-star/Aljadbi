@@ -1,0 +1,6 @@
+{
+  "name": "الجعدبي لكوش الأعراس",
+  "description": "منصة الجعدبي الرقمية المتكاملة لتأجير وتخصيص كوش الأعراس النسائية والرجالية بصالات المناسبات مع هوية يمنية أصيلة ونظام حجز وإدارة شامل.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

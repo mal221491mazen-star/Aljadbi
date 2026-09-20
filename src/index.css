@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'Cairo', system-ui, -apple-system, sans-serif;
+  }
+  
+  h1, h2, h3, .font-title {
+    font-family: 'El Messiri', 'Amiri', 'Cairo', serif;
+  }
+}
+
+.font-himyar {
+  font-family: 'El Messiri', 'Amiri', serif;
+  letter-spacing: 0.05em;
+}
+
+.font-amiri {
+  font-family: 'Amiri', serif;
+}
+
+.font-cairo {
+  font-family: 'Cairo', sans-serif;
+}
+
+/* Subtle Yemeni Qamariya architectural & geometric background patterns */
+.bg-qamariya-pattern {
+  background-color: #FAF8F5;
+  background-image: radial-gradient(#C5A059 0.75px, transparent 0.75px), radial-gradient(#6B1D2F 0.75px, #FAF8F5 0.75px);
+  background-size: 30px 30px;
+  background-position: 0 0, 15px 15px;
+  background-opacity: 0.04;
+}
+
+.bg-pattern-dark {
+  background-color: #12151C;
+  background-image: radial-gradient(rgba(197, 160, 89, 0.15) 0.75px, transparent 0.75px);
+  background-size: 24px 24px;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F2EDE4;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #D4AF37;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #B38E22;
+}
