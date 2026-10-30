@@ -27,11 +27,15 @@ import {
   Copy,
   Check,
   X,
-  ExternalLink
+  ExternalLink,
+  LogOut,
+  Store
 } from 'lucide-react';
 import { Kosha, BookingRequest, ChatMessage, KoshaCategory, BookingStatus } from '../types';
 import { formatPriceYER, formatPriceUSD, formatStatusLabel, getTimeSlotLabel, getPaymentMethodLabel } from '../utils/formatters';
 import { printBookingVoucher } from '../utils/voucherPrinter';
+
+import { AdminAnalytics } from './AdminAnalytics';
 
 interface AdminDashboardProps {
   koshas: Kosha[];
@@ -43,6 +47,7 @@ interface AdminDashboardProps {
   onAddNewKosha: (newKosha: Kosha) => void;
   onOwnerReplyMessage: (text: string, relatedBookingCode?: string) => void;
   onCloseAdmin: () => void;
+  onLogout?: () => void;
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
@@ -55,8 +60,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onAddNewKosha,
   onOwnerReplyMessage,
   onCloseAdmin,
+  onLogout,
 }) => {
-  const [activeTab, setActiveTab] = useState<'bookings' | 'koshas' | 'schedule' | 'messages' | 'settings'>('bookings');
+  const [activeTab, setActiveTab] = useState<'bookings' | 'koshas' | 'schedule' | 'messages' | 'analytics' | 'settings'>('bookings');
   const [bookingFilterStatus, setBookingFilterStatus] = useState<string>('all');
   const [searchBookingQuery, setSearchBookingQuery] = useState<string>('');
   
@@ -215,9 +221,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <button
                 onClick={onCloseAdmin}
                 className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/10 hover:bg-white/20 text-gray-200 transition-colors border border-white/10"
+                title="العودة لواجهة المتجر والزبائن"
               >
-                <Power className="w-3.5 h-3.5 text-rose-400" />
-                <span className="hidden sm:inline">العودة للمتجر</span>
+                <Store className="w-3.5 h-3.5 text-[#F9E8B2]" />
+                <span className="hidden sm:inline">عرض المتجر</span>
+                <span className="sm:hidden">المتجر</span>
+              </button>
+
+              <button
+                onClick={onLogout || onCloseAdmin}
+                className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 transition-colors border border-rose-500/30"
+                title="تسجيل الخروج من لوحة الإدارة"
+              >
+                <LogOut className="w-3.5 h-3.5 text-rose-400" />
+                <span className="hidden sm:inline">تسجيل الخروج</span>
                 <span className="sm:hidden">خروج</span>
               </button>
             </div>
@@ -325,6 +342,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </button>
 
           <button
+            onClick={() => setActiveTab('analytics')}
+            className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all flex items-center gap-2 ${
+              activeTab === 'analytics'
+                ? 'bg-[#801B2E] text-white shadow-xs'
+                : 'text-[#5B4636] hover:bg-[#FAF8F5]'
+            }`}
+          >
+            <BarChart3 className="w-4 h-4 text-[#D4AF37]" />
+            <span>إحصائيات وتقارير الحجوزات (Recharts)</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab('messages')}
             className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all flex items-center gap-2 ${
               activeTab === 'messages'
@@ -420,8 +449,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   </button>
                 </div>
 
-                <div className="text-xs text-[#7A6A5A] hidden md:block">
-                  إجمالي المبالغ: <strong className="text-[#801B2E]">{formatPriceYER(sortedBookings.reduce((sum, b) => sum + b.totalPriceYER, 0))}</strong>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setActiveTab('analytics')}
+                    className="px-3 py-1.5 rounded-xl text-xs font-bold bg-[#FAF0DF] hover:bg-[#F3EAD8] text-[#801B2E] border border-[#D4AF37]/50 flex items-center gap-1.5 transition-colors shadow-2xs"
+                    title="الانتقال إلى الإحصائيات والرسوم البيانية"
+                  >
+                    <BarChart3 className="w-3.5 h-3.5 text-[#801B2E]" />
+                    <span>عرض الرسوم البيانية الشهرية (Recharts)</span>
+                  </button>
+                  <div className="text-xs text-[#7A6A5A] hidden md:block">
+                    إجمالي المبالغ: <strong className="text-[#801B2E]">{formatPriceYER(sortedBookings.reduce((sum, b) => sum + b.totalPriceYER, 0))}</strong>
+                  </div>
                 </div>
               </div>
 
@@ -670,44 +709,63 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
                       {/* 3. Operational Actions Footer */}
                       <div className="bg-[#FAF8F5]/60 px-4 py-3 border-t border-[#F0E9DC] flex flex-wrap items-center justify-between gap-2.5">
-                        {/* Status progression button */}
+                        {/* Status progression button & DIRECT STATUS DROPDOWN */}
                         <div className="flex items-center gap-2 flex-wrap">
+                          {/* Direct status change dropdown requested: 'مؤكد', 'ملغي', 'مكتمل' */}
+                          <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border-2 border-[#D4AF37] shadow-2xs">
+                            <label htmlFor={`status-select-${b.id}`} className="text-xs font-bold text-[#801B2E] flex items-center gap-1 shrink-0">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-[#D4AF37]" />
+                              <span>حالة الحجز:</span>
+                            </label>
+                            <select
+                              id={`status-select-${b.id}`}
+                              value={b.status}
+                              onChange={(e) => onUpdateBookingStatus(b.id, e.target.value as BookingStatus)}
+                              className="bg-[#FAF8F5] border border-[#DDD3BF] rounded-lg px-2.5 py-1 text-xs font-bold text-[#29170E] focus:outline-hidden focus:border-[#801B2E] cursor-pointer"
+                              title="تغيير حالة الحجز مباشرة"
+                            >
+                              <option value="confirmed">مؤكد</option>
+                              <option value="cancelled">ملغي</option>
+                              <option value="completed">مكتمل</option>
+                              <option value="pending">قيد الانتظار</option>
+                              <option value="in_preparation">جاري التجهيز</option>
+                            </select>
+                          </div>
+
+                          {/* Quick single-click progression actions */}
                           {b.status === 'pending' && (
                             <button
                               onClick={() => onUpdateBookingStatus(b.id, 'confirmed')}
-                              className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 active:scale-98 transition-all flex items-center gap-1.5 shadow-2xs"
-                              title="تأكيد الحجز بعد استلام العربون"
+                              className="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 active:scale-98 transition-all flex items-center gap-1 shadow-2xs"
+                              title="تأكيد الحجز فوراً"
                             >
                               <CheckCircle2 className="w-3.5 h-3.5" />
-                              <span>تأكيد الحجز واستلام العربون</span>
+                              <span>تأكيد الحجز</span>
                             </button>
                           )}
 
                           {b.status === 'confirmed' && (
                             <button
-                              onClick={() => onUpdateBookingStatus(b.id, 'in_preparation')}
-                              className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-blue-600 text-white hover:bg-blue-700 active:scale-98 transition-all flex items-center gap-1.5 shadow-2xs"
-                              title="بدء مرحلة التجهيز والقص"
-                            >
-                              <Building2 className="w-3.5 h-3.5" />
-                              <span>بدء التجهيز للتركيب بالصالة</span>
-                            </button>
-                          )}
-
-                          {b.status === 'in_preparation' && (
-                            <button
                               onClick={() => onUpdateBookingStatus(b.id, 'completed')}
-                              className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-white hover:bg-black active:scale-98 transition-all flex items-center gap-1.5 shadow-2xs"
+                              className="px-3 py-1.5 rounded-xl text-xs font-bold bg-blue-600 text-white hover:bg-blue-700 active:scale-98 transition-all flex items-center gap-1 shadow-2xs"
+                              title="إتمام الحفل بنجاح"
                             >
-                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                              <span>تأكيد اكتمال الحفل بنجاح</span>
+                              <ShieldCheck className="w-3.5 h-3.5" />
+                              <span>تأكيد الإتمام</span>
                             </button>
                           )}
 
                           {b.status === 'completed' && (
                             <span className="px-3 py-1 rounded-xl text-xs font-bold text-emerald-800 bg-emerald-100 flex items-center gap-1">
                               <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                              <span>تم الحفل بنجاح وأُغلقت الخدمة</span>
+                              <span>مكتمل بنجاح</span>
+                            </span>
+                          )}
+
+                          {b.status === 'cancelled' && (
+                            <span className="px-3 py-1 rounded-xl text-xs font-bold text-rose-800 bg-rose-100 flex items-center gap-1">
+                              <XCircle className="w-3.5 h-3.5 text-rose-600" />
+                              <span>ملغي</span>
                             </span>
                           )}
                         </div>
@@ -954,6 +1012,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </button>
             </form>
           </div>
+        )}
+
+        {/* TAB 5: RECHARTS ANALYTICS & DECISION MAKING */}
+        {activeTab === 'analytics' && (
+          <AdminAnalytics bookings={bookings} koshas={koshas} />
         )}
       </div>
 

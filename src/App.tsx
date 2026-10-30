@@ -6,7 +6,9 @@ import {
   KoshaCategory, 
   HallSize, 
   CustomizationSelections,
-  BookingStatus
+  BookingStatus,
+  Review,
+  AppUser
 } from './types';
 import { 
   INITIAL_KOSHAS, 
@@ -26,6 +28,10 @@ import { AdminDashboard } from './components/AdminDashboard';
 import { HallsSection } from './components/HallsSection';
 import { Footer } from './components/Footer';
 import { MobileBottomNav } from './components/MobileBottomNav';
+import { AdminLoginModal } from './components/AdminLoginModal';
+import { SplashScreen } from './components/SplashScreen';
+import { AddReviewModal } from './components/AddReviewModal';
+import { AuthScreen } from './components/AuthScreen';
 import { 
   Star, 
   Sparkles, 
@@ -38,6 +44,22 @@ import {
 } from 'lucide-react';
 
 export default function App() {
+  // SPLASH SCREEN STATE (shown before website content appears)
+  const [showSplash, setShowSplash] = useState<boolean>(true);
+
+  // AUTH SCREEN GATE STATE (shown right after splash screen)
+  const [showAuthScreen, setShowAuthScreen] = useState<boolean>(false);
+
+  // CURRENT AUTHENTICATED USER STATE
+  const [currentUser, setCurrentUser] = useState<AppUser | null>(() => {
+    try {
+      const saved = localStorage.getItem('jaadabi_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+
   // PERSISTENT DATA STATES
   const [koshas, setKoshas] = useState<Kosha[]>(() => {
     try {
@@ -45,6 +67,15 @@ export default function App() {
       return saved ? JSON.parse(saved) : INITIAL_KOSHAS;
     } catch {
       return INITIAL_KOSHAS;
+    }
+  });
+
+  const [reviews, setReviews] = useState<Review[]>(() => {
+    try {
+      const saved = localStorage.getItem('jaadabi_reviews');
+      return saved ? JSON.parse(saved) : REVIEWS_LIST;
+    } catch {
+      return REVIEWS_LIST;
     }
   });
 
@@ -91,6 +122,14 @@ export default function App() {
     }
   }, [chatMessages]);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem('jaadabi_reviews', JSON.stringify(reviews));
+    } catch (e) {
+      console.warn('LocalStorage save failed:', e);
+    }
+  }, [reviews]);
+
   // NAVIGATION & VIEW STATES
   const [activeView, setActiveView] = useState<'client' | 'admin'>('client');
   const [category, setCategory] = useState<KoshaCategory>('all');
@@ -105,6 +144,85 @@ export default function App() {
   const [activeCustomization, setActiveCustomization] = useState<CustomizationSelections | null>(null);
   const [isChatOpen, setIsChatOpen] = useState<boolean>(false);
   const [isTrackerOpen, setIsTrackerOpen] = useState<boolean>(false);
+
+  // REVIEW MODAL STATES & HANDLERS
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState<boolean>(false);
+  const [reviewKosha, setReviewKosha] = useState<Kosha | null>(null);
+  const [reviewCustomerName, setReviewCustomerName] = useState<string>('');
+  const [reviewHallName, setReviewHallName] = useState<string>('');
+  const [reviewBookingCode, setReviewBookingCode] = useState<string>('');
+
+  const handleOpenReviewForBooking = (booking: BookingRequest) => {
+    const found = koshas.find((k) => k.id === booking.koshaId || k.name === booking.koshaName) || null;
+    setReviewKosha(found || koshas[0]);
+    setReviewCustomerName(booking.customerName);
+    setReviewHallName(booking.hallName);
+    setReviewBookingCode(booking.bookingCode);
+    setIsReviewModalOpen(true);
+  };
+
+  const handleOpenReviewForKosha = (kosha: Kosha) => {
+    setReviewKosha(kosha);
+    setReviewCustomerName('');
+    setReviewHallName('');
+    setReviewBookingCode('');
+    setIsReviewModalOpen(true);
+  };
+
+  const handleSubmitReview = (reviewData: {
+    koshaId: string;
+    koshaName: string;
+    rating: number;
+    comment: string;
+    author: string;
+    hall: string;
+    city: string;
+  }) => {
+    // 1. Add new review
+    const newRev: Review = {
+      id: `rev_${Date.now()}`,
+      author: reviewData.author,
+      city: reviewData.city,
+      hall: reviewData.hall,
+      koshaName: reviewData.koshaName,
+      rating: reviewData.rating,
+      date: 'اليوم',
+      comment: reviewData.comment,
+    };
+    setReviews((prev) => [newRev, ...prev]);
+
+    // 2. Update Kosha average rating and reviewsCount in memory and localStorage
+    let updatedAverage = reviewData.rating;
+    setKoshas((prev) =>
+      prev.map((k) => {
+        if (k.id === reviewData.koshaId || k.name === reviewData.koshaName) {
+          const count = k.reviewsCount || 0;
+          const currentRating = k.rating || 5.0;
+          const newCount = count + 1;
+          const newAvg = Math.round(((currentRating * count + reviewData.rating) / newCount) * 10) / 10;
+          updatedAverage = newAvg;
+          return {
+            ...k,
+            rating: newAvg,
+            reviewsCount: newCount,
+          };
+        }
+        return k;
+      })
+    );
+
+    showToast(`شكراً لك! تم نشر تقييمك بنجاح وتحديث متوسط تقييم (${reviewData.koshaName}) إلى ${updatedAverage} ⭐`);
+  };
+
+  // ADMIN AUTHENTICATION STATES (Passcode: admin7198)
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('jaadabi_admin_auth') === 'true';
+    } catch {
+      return false;
+    }
+  });
+  const [isAdminLoginModalOpen, setIsAdminLoginModalOpen] = useState<boolean>(false);
   
   // Chat context attachment
   const [chatAttachedKosha, setChatAttachedKosha] = useState<Kosha | null>(null);
@@ -118,6 +236,104 @@ export default function App() {
     setTimeout(() => {
       setToastMessage(null);
     }, 4000);
+  };
+
+  // AUTH SCREEN HANDLERS
+  const handleAuthLoginSuccess = (user: AppUser, targetView: 'client' | 'admin') => {
+    setCurrentUser(user);
+    setShowAuthScreen(false);
+    try {
+      localStorage.setItem('jaadabi_user', JSON.stringify(user));
+    } catch (e) {
+      console.warn('LocalStorage user save failed:', e);
+    }
+
+    if (targetView === 'admin' || user.role === 'admin') {
+      setIsAdminAuthenticated(true);
+      setActiveView('admin');
+      try {
+        localStorage.setItem('jaadabi_admin_auth', 'true');
+      } catch (e) {
+        console.warn('LocalStorage admin save error:', e);
+      }
+      showToast(`مرحباً بك يا ${user.name}! تم فتح لوحة تحكم الإدارة بنجاح 👑`);
+    } else {
+      setActiveView('client');
+      showToast(`أهلاً وسهلاً بك يا ${user.name}! نتمنى لك تجربة ممتعة في اختيار كوشتك ✨`);
+    }
+  };
+
+  const handleContinueAsGuest = () => {
+    setShowAuthScreen(false);
+    setActiveView('client');
+    showToast('مرحباً بك زائرنا الكريم في معرض كوش الجعدبي! يمكنك الحجز في أي وقت.');
+  };
+
+  const handleUserLogout = () => {
+    setCurrentUser(null);
+    setIsAdminAuthenticated(false);
+    setActiveView('client');
+    try {
+      localStorage.removeItem('jaadabi_user');
+      localStorage.removeItem('jaadabi_admin_auth');
+    } catch (e) {
+      console.warn('LocalStorage clear error:', e);
+    }
+    showToast('تم تسجيل الخروج بنجاح.');
+  };
+
+  // ADMIN AUTHENTICATION HANDLERS
+  const handleAdminLoginSuccess = () => {
+    setIsAdminAuthenticated(true);
+    setIsAdminLoginModalOpen(false);
+    setActiveView('admin');
+    const adminUser: AppUser = {
+      id: 'usr_admin',
+      name: 'مدير كوش الجعدبي',
+      email: 'admin@jaadabi.ye',
+      phone: '777123456',
+      city: 'صنعاء',
+      role: 'admin',
+    };
+    setCurrentUser(adminUser);
+    try {
+      localStorage.setItem('jaadabi_admin_auth', 'true');
+      localStorage.setItem('jaadabi_user', JSON.stringify(adminUser));
+    } catch (e) {
+      console.warn('LocalStorage admin save error:', e);
+    }
+    showToast('مرحباً بك! تم تسجيل الدخول بنجاح إلى لوحة الإدارة.');
+  };
+
+  const handleAdminLogout = () => {
+    setIsAdminAuthenticated(false);
+    if (currentUser?.role === 'admin') {
+      setCurrentUser(null);
+      localStorage.removeItem('jaadabi_user');
+    }
+    setActiveView('client');
+    try {
+      localStorage.removeItem('jaadabi_admin_auth');
+    } catch (e) {
+      console.warn('LocalStorage admin clear error:', e);
+    }
+    showToast('تم تسجيل الخروج من لوحة الإدارة بنجاح.');
+  };
+
+  const handleRequestAdminLogin = () => {
+    setIsAdminLoginModalOpen(true);
+  };
+
+  const handleViewChange = (view: 'client' | 'admin') => {
+    if (view === 'admin') {
+      if (isAdminAuthenticated) {
+        setActiveView('admin');
+      } else {
+        setIsAdminLoginModalOpen(true);
+      }
+    } else {
+      setActiveView('client');
+    }
   };
 
   // HANDLERS
@@ -273,7 +489,7 @@ export default function App() {
       {/* Main Navigation Header */}
       <Navbar
         activeView={activeView}
-        onViewChange={setActiveView}
+        onViewChange={handleViewChange}
         onOpenChat={() => setIsChatOpen(true)}
         onOpenTracker={() => setIsTrackerOpen(true)}
         onSelectCategory={(cat) => {
@@ -284,10 +500,16 @@ export default function App() {
         unreadChatCount={0}
         pendingBookingsCount={pendingBookingsCount}
         favoritesCount={0}
+        isAdminAuthenticated={isAdminAuthenticated}
+        onRequestAdminLogin={handleRequestAdminLogin}
+        onAdminLogout={handleAdminLogout}
+        currentUser={currentUser}
+        onOpenAuth={() => setShowAuthScreen(true)}
+        onUserLogout={handleUserLogout}
       />
 
-      {/* RENDER VIEW: ADMIN VS CLIENT */}
-      {activeView === 'admin' ? (
+      {/* RENDER VIEW: ADMIN VS CLIENT (Admin interface displayed ONLY for authenticated admin) */}
+      {activeView === 'admin' && isAdminAuthenticated ? (
         <AdminDashboard
           koshas={koshas}
           bookings={bookings}
@@ -298,6 +520,7 @@ export default function App() {
           onAddNewKosha={handleAddNewKosha}
           onOwnerReplyMessage={handleOwnerReplyMessage}
           onCloseAdmin={() => setActiveView('client')}
+          onLogout={handleAdminLogout}
         />
       ) : (
         <main className="flex-1">
@@ -405,24 +628,34 @@ export default function App() {
           {/* Testimonials & Reviews Section */}
           <section className="py-14 bg-white border-t border-[#E8DEC8]">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="text-center max-w-2xl mx-auto mb-10">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FAF0E1] border border-[#D4AF37]/40 text-[#801B2E] text-xs font-bold mb-2">
-                  <Star className="w-3.5 h-3.5 fill-current text-amber-500" />
-                  <span>آراء عرسان الجعدبي</span>
+              <div className="flex flex-col sm:flex-row items-center justify-between mb-10 gap-4">
+                <div className="text-center sm:text-right">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FAF0E1] border border-[#D4AF37]/40 text-[#801B2E] text-xs font-bold mb-2">
+                    <Star className="w-3.5 h-3.5 fill-current text-amber-500" />
+                    <span>آراء وتجارب عرسان الجعدبي</span>
+                  </div>
+                  <h2 className="text-2xl sm:text-3xl font-bold font-title text-[#29170E]">
+                    ثقة العائلات اليمنية في صالات الأعراس
+                  </h2>
+                  <p className="text-xs sm:text-sm text-[#6B5A4B] mt-1">
+                    تجارب حقيقية لعرسان وعوائل احتفلوا بأبهى الليالي مع كوش وفريق عمل الجعدبي
+                  </p>
                 </div>
-                <h2 className="text-2xl sm:text-3xl font-bold font-title text-[#29170E]">
-                  ثقة العائلات اليمنية في صالات الأعراس
-                </h2>
-                <p className="text-xs sm:text-sm text-[#6B5A4B] mt-1">
-                  تجارب حقيقية لعرسان وعوائل احتفلوا بأبهى الليالي مع كوش وفريق عمل الجعدبي
-                </p>
+
+                <button
+                  onClick={() => handleOpenReviewForKosha(koshas[0])}
+                  className="px-5 py-2.5 rounded-xl bg-[#801B2E] text-white hover:bg-[#681424] font-bold text-xs sm:text-sm shadow-md transition-all flex items-center gap-2 cursor-pointer shrink-0"
+                >
+                  <Star className="w-4 h-4 fill-current text-[#F9E8B2]" />
+                  <span>أضف تقييمك ورأيك (نجوم وتعليق)</span>
+                </button>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                {REVIEWS_LIST.map((rev) => (
+                {reviews.slice(0, 6).map((rev) => (
                   <div
                     key={rev.id}
-                    className="bg-[#FAF8F5] p-5 rounded-2xl border border-[#E6DEC8] flex flex-col justify-between"
+                    className="bg-[#FAF8F5] p-5 rounded-2xl border border-[#E6DEC8] flex flex-col justify-between shadow-2xs hover:shadow-md transition-all"
                   >
                     <div>
                       <div className="flex items-center justify-between mb-3">
@@ -462,6 +695,7 @@ export default function App() {
         onClose={() => setSelectedKoshaForDetail(null)}
         onBookNow={(k, customization) => handleStartBooking(k, customization)}
         onInquire={(k, msg) => handleInquireKosha(k, msg)}
+        onOpenReview={handleOpenReviewForKosha}
       />
 
       {/* 2. Multi-step Booking Wizard */}
@@ -474,6 +708,7 @@ export default function App() {
         }}
         onConfirmBooking={handleConfirmNewBooking}
         onOpenChatWithBooking={handleOpenChatWithBooking}
+        currentUser={currentUser}
       />
 
       {/* 3. Booking Status Tracker Modal */}
@@ -482,6 +717,7 @@ export default function App() {
         onClose={() => setIsTrackerOpen(false)}
         bookings={bookings}
         onOpenChatWithBooking={handleOpenChatWithBooking}
+        onOpenReviewModal={handleOpenReviewForBooking}
       />
 
       {/* 4. Live Chat Drawer */}
@@ -503,6 +739,40 @@ export default function App() {
         senderRole={activeView === 'admin' ? 'owner' : 'customer'}
       />
 
+      {/* 5. Customer Reviews Modal */}
+      <AddReviewModal
+        isOpen={isReviewModalOpen}
+        kosha={reviewKosha}
+        defaultCustomerName={reviewCustomerName || currentUser?.name || ''}
+        defaultHallName={reviewHallName}
+        bookingCode={reviewBookingCode}
+        onClose={() => {
+          setIsReviewModalOpen(false);
+          setReviewKosha(null);
+        }}
+        onSubmitReview={handleSubmitReview}
+      />
+
+      {/* 6. Branded Royal Splash Screen (displayed on app entry before website content) */}
+      {showSplash && (
+        <SplashScreen
+          onFinish={() => {
+            setShowSplash(false);
+            setShowAuthScreen(true);
+          }}
+        />
+      )}
+
+      {/* 7. Post-Splash Authentication Screen (Login / Register -> Admin opens Dashboard, User opens Store) */}
+      {showAuthScreen && (
+        <AuthScreen
+          onLoginSuccess={handleAuthLoginSuccess}
+          onContinueAsGuest={handleContinueAsGuest}
+          canClose={true}
+          onClose={() => setShowAuthScreen(false)}
+        />
+      )}
+
       {/* Global Footer */}
       <Footer
         onOpenChat={() => setIsChatOpen(true)}
@@ -517,7 +787,7 @@ export default function App() {
       {/* Dedicated Mobile Bottom Navigation Bar */}
       <MobileBottomNav
         activeView={activeView}
-        onViewChange={setActiveView}
+        onViewChange={handleViewChange}
         onOpenChat={() => setIsChatOpen(true)}
         onOpenTracker={() => setIsTrackerOpen(true)}
         onScrollToCatalog={() => {
@@ -526,6 +796,17 @@ export default function App() {
         }}
         unreadChatCount={0}
         pendingBookingsCount={pendingBookingsCount}
+        isAdminAuthenticated={isAdminAuthenticated}
+        onRequestAdminLogin={handleRequestAdminLogin}
+        currentUser={currentUser}
+        onOpenAuth={() => setShowAuthScreen(true)}
+      />
+
+      {/* Admin Passcode Authentication Modal (admin7198) */}
+      <AdminLoginModal
+        isOpen={isAdminLoginModalOpen}
+        onClose={() => setIsAdminLoginModalOpen(false)}
+        onLoginSuccess={handleAdminLoginSuccess}
       />
     </div>
   );

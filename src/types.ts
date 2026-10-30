@@ -126,3 +126,14 @@ export interface Review {
   date: string;
   comment: string;
 }
+
+export interface AppUser {
+  id: string;
+  name: string;
+  phone?: string;
+  email?: string;
+  city?: string;
+  role: 'admin' | 'customer';
+  createdAt?: string;
+}
+

@@ -15,7 +15,8 @@ import {
   ChevronRight,
   Flame,
   Plus,
-  Check
+  Check,
+  Star
 } from 'lucide-react';
 import { Kosha, KoshaAddon, CustomizationSelections } from '../types';
 import { AVAILABLE_ADDONS } from '../data/initialData';
@@ -26,6 +27,7 @@ interface KoshaDetailModalProps {
   onClose: () => void;
   onBookNow: (kosha: Kosha, customization: CustomizationSelections) => void;
   onInquire: (kosha: Kosha, messageText?: string) => void;
+  onOpenReview?: (kosha: Kosha) => void;
 }
 
 export const KoshaDetailModal: React.FC<KoshaDetailModalProps> = ({
@@ -33,6 +35,7 @@ export const KoshaDetailModal: React.FC<KoshaDetailModalProps> = ({
   onClose,
   onBookNow,
   onInquire,
+  onOpenReview,
 }) => {
   const [activeImageIndex, setActiveImageIndex] = useState<number>(0);
   const [activeTab, setActiveTab] = useState<'details' | 'customize'>('customize');
@@ -107,12 +110,30 @@ export const KoshaDetailModal: React.FC<KoshaDetailModalProps> = ({
             </div>
           </div>
 
-          <button
-            onClick={onClose}
-            className="p-1.5 sm:p-2 rounded-full text-[#7A6A5A] hover:bg-[#F2EDE4] hover:text-[#29170E] transition-colors shrink-0"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-1.5 bg-[#FAF0DF] px-2.5 py-1 rounded-xl border border-[#D4AF37]/50 text-xs">
+              <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+              <span className="font-bold text-[#29170E]">{kosha.rating}</span>
+              <span className="text-[11px] text-[#7A6A5A] hidden sm:inline">({kosha.reviewsCount})</span>
+              {onOpenReview && (
+                <button
+                  type="button"
+                  onClick={() => onOpenReview(kosha)}
+                  className="mr-1.5 px-2 py-0.5 rounded-md bg-[#801B2E] text-[#F9E8B2] hover:bg-[#681424] text-[10.5px] font-bold transition-colors cursor-pointer"
+                  title="تقييم هذه الكوشة وإضافة رأيك"
+                >
+                  ⭐ أضف تقييمك
+                </button>
+              )}
+            </div>
+
+            <button
+              onClick={onClose}
+              className="p-1.5 sm:p-2 rounded-full text-[#7A6A5A] hover:bg-[#F2EDE4] hover:text-[#29170E] transition-colors shrink-0 cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* View Switcher Tabs (معاينة ومواصفات / تخصيص الكوشة) */}

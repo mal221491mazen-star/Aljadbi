@@ -10,7 +10,8 @@ import {
   MessageSquare,
   AlertCircle,
   FileText,
-  Printer
+  Printer,
+  Star
 } from 'lucide-react';
 import { BookingRequest } from '../types';
 import { formatPriceYER, formatStatusLabel, getTimeSlotLabel } from '../utils/formatters';
@@ -21,6 +22,7 @@ interface BookingTrackerModalProps {
   onClose: () => void;
   bookings: BookingRequest[];
   onOpenChatWithBooking: (bookingCode: string, koshaName: string) => void;
+  onOpenReviewModal?: (booking: BookingRequest) => void;
 }
 
 export const BookingTrackerModal: React.FC<BookingTrackerModalProps> = ({
@@ -28,6 +30,7 @@ export const BookingTrackerModal: React.FC<BookingTrackerModalProps> = ({
   onClose,
   bookings,
   onOpenChatWithBooking,
+  onOpenReviewModal,
 }) => {
   const [searchCode, setSearchCode] = useState('');
   const [searchedBooking, setSearchedBooking] = useState<BookingRequest | null>(
@@ -257,6 +260,35 @@ export const BookingTrackerModal: React.FC<BookingTrackerModalProps> = ({
                     <span>طباعة / حفظ سند هذا الحجز (PDF)</span>
                   </button>
                 </div>
+              </div>
+
+              {/* Rate and Review Kosha after booking completion or anytime */}
+              <div className="bg-gradient-to-r from-[#FAF0DF] to-[#FFF9F0] p-4 rounded-2xl border-2 border-[#D4AF37]/70 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div>
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-[#801B2E]">
+                    <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
+                    <span>
+                      {searchedBooking.status === 'completed'
+                        ? 'تهانينا لاكتمال الحفل! شاركنا تقييمك للكوشة'
+                        : 'تقييم الكوشة وإضافة رأيك (نجوم وتعليق)'}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-[#6E5D4E] mt-0.5">
+                    رأيك يساعد عرسان اليمن ويحدّث متوسط تقييم كوشة ({searchedBooking.koshaName}) فوراً.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    onOpenReviewModal?.(searchedBooking);
+                  }}
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-[#801B2E] text-white hover:bg-[#681424] transition-all flex items-center gap-1.5 shrink-0 shadow-2xs cursor-pointer"
+                >
+                  <Star className="w-3.5 h-3.5 fill-current text-[#F9E8B2]" />
+                  <span>إضافة تقييم (نجوم وتعليق)</span>
+                </button>
               </div>
 
               {/* Chat action with this booking */}

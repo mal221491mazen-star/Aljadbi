@@ -1,5 +1,5 @@
-import React from 'react';
-import { Home, Layers, Search, MessageSquare, ShieldCheck } from 'lucide-react';
+import { AppUser } from '../types';
+import { Home, Layers, Search, MessageSquare, ShieldCheck, Lock, User, Crown } from 'lucide-react';
 
 interface MobileBottomNavProps {
   activeView: 'client' | 'admin';
@@ -9,6 +9,10 @@ interface MobileBottomNavProps {
   onScrollToCatalog: () => void;
   unreadChatCount: number;
   pendingBookingsCount: number;
+  isAdminAuthenticated: boolean;
+  onRequestAdminLogin: () => void;
+  currentUser?: AppUser | null;
+  onOpenAuth?: () => void;
 }
 
 export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
@@ -19,6 +23,10 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
   onScrollToCatalog,
   unreadChatCount,
   pendingBookingsCount,
+  isAdminAuthenticated,
+  onRequestAdminLogin,
+  currentUser,
+  onOpenAuth,
 }) => {
   return (
     <nav
@@ -85,9 +93,21 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
           <span className="text-[10px] mt-0.5 leading-tight">المحادثة</span>
         </button>
 
-        {/* 5. Owner / Admin Dashboard Toggle */}
+        {/* 5. Owner / Admin / Auth Screen Toggle */}
         <button
-          onClick={() => onViewChange(activeView === 'admin' ? 'client' : 'admin')}
+          onClick={() => {
+            if (activeView === 'admin') {
+              onViewChange('client');
+            } else {
+              if (isAdminAuthenticated) {
+                onViewChange('admin');
+              } else if (onOpenAuth) {
+                onOpenAuth();
+              } else {
+                onRequestAdminLogin();
+              }
+            }
+          }}
           className={`relative flex flex-col items-center justify-center py-1 rounded-xl transition-all min-h-[46px] ${
             activeView === 'admin'
               ? 'text-[#801B2E] font-bold bg-[#FAF0F2] border border-[#801B2E]/20'
@@ -95,7 +115,13 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
           }`}
         >
           <div className="relative">
-            <ShieldCheck className={`w-5 h-5 ${activeView === 'admin' ? 'text-[#801B2E]' : ''}`} />
+            {isAdminAuthenticated ? (
+              <ShieldCheck className={`w-5 h-5 ${activeView === 'admin' ? 'text-[#801B2E]' : ''}`} />
+            ) : currentUser ? (
+              <User className="w-5 h-5 text-[#801B2E]" />
+            ) : (
+              <Lock className="w-5 h-5 text-[#801B2E]" />
+            )}
             {pendingBookingsCount > 0 && (
               <span className="absolute -top-1.5 -right-2 w-4 h-4 bg-amber-500 text-white text-[9px] rounded-full flex items-center justify-center font-bold">
                 {pendingBookingsCount}
@@ -103,10 +129,18 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
             )}
           </div>
           <span className="text-[10px] mt-0.5 leading-tight">
-            {activeView === 'admin' ? 'المتجر' : 'الإدارة'}
+            {activeView === 'admin'
+              ? 'المتجر'
+              : isAdminAuthenticated
+              ? 'الإدارة'
+              : currentUser
+              ? 'حسابي'
+              : 'تسجيل دخول'}
           </span>
         </button>
       </div>
     </nav>
   );
 };
+
+

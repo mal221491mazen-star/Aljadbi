@@ -16,7 +16,7 @@ import {
   Copy,
   Check
 } from 'lucide-react';
-import { Kosha, CustomizationSelections, BookingRequest, PaymentMethod, EventTimeSlot } from '../types';
+import { Kosha, CustomizationSelections, BookingRequest, PaymentMethod, EventTimeSlot, AppUser } from '../types';
 import { AVAILABLE_ADDONS, YEMENI_HALLS } from '../data/initialData';
 import { formatPriceYER, formatPriceUSD, getTimeSlotLabel, getPaymentMethodLabel } from '../utils/formatters';
 import { printBookingVoucher } from '../utils/voucherPrinter';
@@ -27,6 +27,7 @@ interface BookingModalProps {
   onClose: () => void;
   onConfirmBooking: (booking: BookingRequest) => void;
   onOpenChatWithBooking: (bookingCode: string, koshaName: string) => void;
+  currentUser?: AppUser | null;
 }
 
 export const BookingModal: React.FC<BookingModalProps> = ({
@@ -35,6 +36,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
   onClose,
   onConfirmBooking,
   onOpenChatWithBooking,
+  currentUser,
 }) => {
   const [step, setStep] = useState<'form' | 'success'>('form');
   const [createdBooking, setCreatedBooking] = useState<BookingRequest | null>(null);
@@ -42,11 +44,11 @@ export const BookingModal: React.FC<BookingModalProps> = ({
   const [isPrinting, setIsPrinting] = useState<boolean>(false);
   const [printSuccessNotice, setPrintSuccessNotice] = useState<boolean>(false);
 
-  // Form Fields
-  const [customerName, setCustomerName] = useState('');
-  const [customerPhone, setCustomerPhone] = useState('');
-  const [customerWhatsapp, setCustomerWhatsapp] = useState('');
-  const [customerCity, setCustomerCity] = useState('صنعاء');
+  // Form Fields - Auto pre-filled with logged in user profile for great UX
+  const [customerName, setCustomerName] = useState(currentUser?.name || '');
+  const [customerPhone, setCustomerPhone] = useState(currentUser?.phone || '');
+  const [customerWhatsapp, setCustomerWhatsapp] = useState(currentUser?.phone || '');
+  const [customerCity, setCustomerCity] = useState(currentUser?.city || 'صنعاء');
   const [hallName, setHallName] = useState(YEMENI_HALLS[0].name);
   const [customHallName, setCustomHallName] = useState('');
   const [hallAddress, setHallAddress] = useState(YEMENI_HALLS[0].area);
